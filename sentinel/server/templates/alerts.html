@@ -81,45 +81,47 @@
 </section>
 
 <section class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
     <h2>Live Threat &amp; Integrity Alerts</h2>
-    <span class="muted" style="font-size: 12px;">Auto-refreshing every 2s</span>
+    <span class="muted" style="font-size: 12px; white-space: nowrap;">Auto-refreshing every 2s</span>
   </div>
   {% if not alerts %}
     <p class="muted" style="margin-top: 16px;">No alerts recorded. All monitored files match current baselines.</p>
   {% else %}
-    <div style="overflow-x: auto; margin-top: 16px;">
-      <table class="incidents-table" style="width: 100%; border-collapse: collapse; min-width: 780px;">
+    <div style="overflow-x: auto; width: 100%;">
+      <table class="incidents-table" style="width: 100%; border-collapse: collapse; table-layout: auto;">
         <thead>
           <tr style="border-bottom: 1px solid var(--border); text-align: left;">
-            <th style="padding: 10px 12px; white-space: nowrap;">ID</th>
-            <th style="padding: 10px 12px; white-space: nowrap;">Severity</th>
-            <th style="padding: 10px 12px; word-break: break-all;">Target Path</th>
-            <th style="padding: 10px 12px; white-space: nowrap;">Host</th>
-            <th style="padding: 10px 12px; white-space: nowrap;">Kinds</th>
-            <th style="padding: 10px 12px; white-space: nowrap;">Signals</th>
-            <th style="padding: 10px 12px; white-space: nowrap;">Status</th>
-            <th style="padding: 10px 16px; white-space: nowrap; text-align: right; min-width: 110px;">Action</th>
+            <th style="padding: 12px 14px; white-space: nowrap; width: 50px;">ID</th>
+            <th style="padding: 12px 14px; white-space: nowrap; width: 110px;">Severity</th>
+            <th style="padding: 12px 14px; word-break: break-all; min-width: 280px;">Target Path</th>
+            <th style="padding: 12px 14px; white-space: nowrap; width: 140px;">Host</th>
+            <th style="padding: 12px 14px; white-space: nowrap; width: 120px;">Kinds</th>
+            <th style="padding: 12px 14px; white-space: nowrap; width: 100px;">Signals</th>
+            <th style="padding: 12px 14px; white-space: nowrap; width: 110px;">Status</th>
+            <th style="padding: 12px 20px; white-space: nowrap; text-align: right; width: 120px;">Action</th>
           </tr>
         </thead>
         <tbody>
           {% for a in alerts %}
           <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <td style="padding: 10px 12px; white-space: nowrap;">#{{ a.id }}</td>
-            <td style="padding: 10px 12px; white-space: nowrap;"><span class="badge {{ a.severity }}">{{ a.severity }}</span></td>
-            <td style="padding: 10px 12px; font-family: var(--font-code); font-size: 13px; word-break: break-all;">{{ a.path }}</td>
-            <td style="padding: 10px 12px; white-space: nowrap;">{{ a.host_id }}</td>
-            <td style="padding: 10px 12px; white-space: nowrap;">{{ a.kinds | join(', ') }}</td>
-            <td style="padding: 10px 12px; white-space: nowrap;">
+            <td style="padding: 14px; white-space: nowrap; color: var(--muted);">#{{ a.id }}</td>
+            <td style="padding: 14px; white-space: nowrap;"><span class="badge {{ a.severity }}">{{ a.severity }}</span></td>
+            <td style="padding: 14px; font-family: var(--font-code); font-size: 13px; word-break: break-all; color: #fff;">{{ a.path }}</td>
+            <td style="padding: 14px; white-space: nowrap; color: var(--text);">{{ a.host_id }}</td>
+            <td style="padding: 14px; white-space: nowrap; color: var(--muted);">{{ a.kinds | join(', ') }}</td>
+            <td style="padding: 14px; white-space: nowrap;">
               {% if a.signals %}
-                <span style="color: #ff4444; font-weight: 600;">{{ a.signals | join(', ') }}</span>
+                <span style="color: #ff4444; font-weight: 700; background: rgba(255,68,68,0.1); padding: 2px 6px; border-radius: 4px;">{{ a.signals | join(', ') }}</span>
               {% else %}
                 <span class="muted">—</span>
               {% endif %}
             </td>
-            <td style="padding: 10px 12px; white-space: nowrap;"><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
-            <td style="padding: 10px 16px; white-space: nowrap; text-align: right;">
-              <a href="{{ url_for('alert_detail', alert_id=a.id) }}" style="color: var(--ok); text-decoration: none; font-weight: 600; display: inline-block; padding: 4px 8px; border-radius: 4px; background: rgba(0,255,159,0.08); border: 1px solid rgba(0,255,159,0.2);">Inspect &rarr;</a>
+            <td style="padding: 14px; white-space: nowrap;"><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
+            <td style="padding: 14px 20px; white-space: nowrap; text-align: right;">
+              <a href="{{ url_for('alert_detail', alert_id=a.id) }}" style="color: var(--ok); text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 4px; background: rgba(0,255,159,0.08); border: 1px solid rgba(0,255,159,0.25);">
+                Inspect &rarr;
+              </a>
             </td>
           </tr>
           {% endfor %}
