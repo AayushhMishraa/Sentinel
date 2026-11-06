@@ -1,0 +1,64 @@
+# Sentinel Configuration Example
+# Copy to sentinel.yaml and configure for your environment.
+
+host_id: auto            # auto = socket.gethostname()
+server:
+  url: "http://127.0.0.1:5000"
+  token_env: "SENTINEL_TOKEN"
+
+defaults:
+  exclude:
+    - ".git/**"
+    - "node_modules/**"
+    - "__pycache__/**"
+    - "*.swp"
+    - "*.tmp"
+  new_file_severity: "info"
+  max_files: 50000
+  max_hash_bytes: 104857600   # 100 MB
+
+paths:
+  - id: "ssh"
+    path: "~/.ssh"
+    mode: "monitor"
+    include:
+      - "authorized_keys"
+      - "config"
+    decoys: false
+    capture_content: true
+
+  - id: "web"
+    path: "/var/www/html"
+    mode: "monitor"
+    decoys: true
+
+  - id: "docs"
+    path: "~/important"
+    mode: "protect"
+    decoys: true
+
+rules:
+  - match: "**/authorized_keys"
+    severity: "critical"
+    reason: "SSH access list changed"
+  - match: "/etc/passwd"
+    severity: "critical"
+    reason: "User account database modified"
+  - match: "/etc/shadow"
+    severity: "critical"
+    reason: "Shadow password database modified"
+  - match: "/etc/sudoers"
+    severity: "critical"
+    reason: "Privilege escalation policy modified"
+  - match: "/etc/sudoers.d/**"
+    severity: "critical"
+    reason: "Privilege escalation policy modified"
+  - match: "**/index.*"
+    under: "web"
+    severity: "high"
+    reason: "possible defacement"
+
+notify:
+  webhooks:
+    - url: "http://127.0.0.1:9000/hook"
+      min_severity: "high"

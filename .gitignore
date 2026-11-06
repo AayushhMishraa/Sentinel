@@ -13,3 +13,6 @@ rewind.log
 *.locked
 .DS_Store
 Thumbs.db
+sentinel.yaml
+*.db
+*.log
