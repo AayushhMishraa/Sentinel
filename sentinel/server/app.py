@@ -13,6 +13,7 @@ import time
 from typing import Optional
 from flask import Flask, abort, jsonify, redirect, render_template, request, url_for
 
+from sentinel.report import generate_compliance_report_html
 from sentinel.server.api_v1 import api_v1
 from sentinel.server.repo import Repository, SQLiteRepository
 
@@ -89,6 +90,11 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None) -> Flask:
         note = request.form.get("note", "")
         repo.resolve_alert(alert_id, action, actor=actor, note=note)
         return redirect(url_for("alert_detail", alert_id=alert_id))
+
+    @app.route("/report")
+    def report_view():
+        days = request.args.get("days", 30, type=int)
+        return generate_compliance_report_html(repo, days=days)
 
     @app.route("/api/v1/stats")
     def api_stats():
