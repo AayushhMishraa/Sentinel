@@ -25,7 +25,7 @@ from sentinel.classifier import classify_file_change
 from sentinel.models import EventEnvelope
 from sentinel.rules import escalate_with_signals, evaluate_rules
 from sentinel.settings import PathSettings, SentinelConfig
-from sentinel.sinks import EventSink
+from sentinel.sinks import EventSink, LocalSink
 from watcher.file_watcher import FileWatcher, get_process_touching_file
 from watcher.watcher_control import WatcherControl
 
@@ -245,6 +245,43 @@ class SentinelEngine:
             )
             counts[p_cfg.id] = cnt
         return counts
+
+    def approve_alert(self, alert_id: int, actor: str, note: str = "") -> bool:
+        """Approve an alert: update agent-side baseline to current file state, record audit."""
+        # Resolve alert in repository
+        if isinstance(self.sink, LocalSink):
+            alert = self.sink.repo.get_alert(alert_id)
+            if not alert:
+                return False
+            resolved = self.sink.repo.resolve_alert(alert_id, "approve", actor, note)
+            if not resolved:
+                return False
+
+            # Update baseline entry for this path
+            wp = self.watched_paths.get(alert.root_id)
+            if wp:
+                rel = os.path.relpath(alert.path, wp.root_path).replace("\\", "/")
+                new_entry = inspect_file(
+                    alert.root_id,
+                    wp.root_path,
+                    rel,
+                    self.config.defaults.max_hash_bytes,
+                    wp.config.capture_content,
+                )
+                if new_entry:
+                    self.baseline_store.set_entry(new_entry)
+                    # Update internal reported hash to prevent repeat alerts
+                    wp._last_reported_hashes[rel] = new_entry.sha256
+                elif not os.path.exists(alert.path):
+                    self.baseline_store.remove_entry(alert.root_id, rel)
+            return True
+        return False
+
+    def reject_alert(self, alert_id: int, actor: str, note: str = "") -> bool:
+        """Reject an alert: marks alert rejected, baseline is NOT updated (drift remains)."""
+        if isinstance(self.sink, LocalSink):
+            return self.sink.repo.resolve_alert(alert_id, "reject", actor, note)
+        return False
 
     def start(self) -> None:
         self._running = True
