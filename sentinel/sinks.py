@@ -76,3 +76,64 @@ class HttpSink(EventSink):
             pass
         return False
 
+
+class DiskBufferedHttpSink(EventSink):
+    """Disk-backed persistent queue for offline event buffering and replay."""
+
+    def __init__(self, queue_db_path: str, server_url: str, token: Optional[str] = None) -> None:
+        import os
+        import sqlite3
+        self.queue_db_path = os.path.abspath(os.path.expanduser(queue_db_path))
+        os.makedirs(os.path.dirname(self.queue_db_path), exist_ok=True)
+        self.http_sink = HttpSink(server_url=server_url, token=token)
+        self._init_queue_db()
+
+    def _init_queue_db(self) -> None:
+        import sqlite3
+        with sqlite3.connect(self.queue_db_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS event_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id TEXT UNIQUE,
+                    payload TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                )
+            """)
+            conn.commit()
+
+    def emit(self, envelope: EventEnvelope) -> Optional[Alert]:
+        import sqlite3
+        import time
+        # 1. Enqueue to disk first (durability)
+        with sqlite3.connect(self.queue_db_path) as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO event_queue (event_id, payload, created_at) VALUES (?, ?, ?)",
+                (envelope.event_id, envelope.to_json(), time.time())
+            )
+            conn.commit()
+
+        # 2. Try flushing queue
+        self.flush()
+        return None
+
+    def flush(self) -> int:
+        """Attempt to flush buffered events to server in order. Returns count delivered."""
+        import json
+        import sqlite3
+        with sqlite3.connect(self.queue_db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT id, payload FROM event_queue ORDER BY id ASC LIMIT 50").fetchall()
+            if not rows:
+                return 0
+
+            envelopes = [EventEnvelope.from_json(r["payload"]) for r in rows]
+            if self.http_sink.emit_batch(envelopes):
+                # Delivered! Remove batch from queue
+                ids = [r["id"] for r in rows]
+                placeholders = ",".join("?" for _ in ids)
+                conn.execute(f"DELETE FROM event_queue WHERE id IN ({placeholders})", tuple(ids))
+                conn.commit()
+                return len(ids)
+
+        return 0
+
