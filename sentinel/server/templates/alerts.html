@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Alerts · Sentinel{% endblock %}
+{% block content %}
+<section class="stats-grid">
+  <div class="stat-box">
+    <div class="muted">OPEN ALERTS</div>
+    <div class="stat-val" style="color: #fff;">{{ stats.total_open }}</div>
+  </div>
+  <div class="stat-box">
+    <div class="muted">CRITICAL</div>
+    <div class="stat-val" style="color: #ff4444;">{{ stats.critical }}</div>
+  </div>
+  <div class="stat-box">
+    <div class="muted">HIGH</div>
+    <div class="stat-val" style="color: #ff8800;">{{ stats.high }}</div>
+  </div>
+  <div class="stat-box">
+    <div class="muted">MEDIUM</div>
+    <div class="stat-val" style="color: #ffcc00;">{{ stats.medium }}</div>
+  </div>
+  <div class="stat-box">
+    <div class="muted">LOW</div>
+    <div class="stat-val" style="color: #33b5e5;">{{ stats.low }}</div>
+  </div>
+  <div class="stat-box">
+    <div class="muted">INFO</div>
+    <div class="stat-val" style="color: #aaaaaa;">{{ stats.info }}</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Live Threat & Integrity Alerts</h2>
+  {% if not alerts %}
+    <p class="muted">No alerts recorded yet. All watched systems are clean and baseline-aligned.</p>
+  {% else %}
+    <table class="incidents-table" style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+          <th style="padding: 10px;">ID</th>
+          <th style="padding: 10px;">Severity</th>
+          <th style="padding: 10px;">Path</th>
+          <th style="padding: 10px;">Kinds</th>
+          <th style="padding: 10px;">Signals</th>
+          <th style="padding: 10px;">Status</th>
+          <th style="padding: 10px;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in alerts %}
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td style="padding: 10px;">#{{ a.id }}</td>
+          <td style="padding: 10px;"><span class="badge {{ a.severity }}">{{ a.severity }}</span></td>
+          <td style="padding: 10px; font-family: var(--font-code); font-size: 13px;">{{ a.path }}</td>
+          <td style="padding: 10px;">{{ a.kinds | join(', ') }}</td>
+          <td style="padding: 10px;">
+            {% if a.signals %}
+              <span style="color: #ff4444; font-weight: 600;">{{ a.signals | join(', ') }}</span>
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
+          <td style="padding: 10px;"><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
+          <td style="padding: 10px;"><a href="{{ url_for('alert_detail', alert_id=a.id) }}" style="color: var(--ok); text-decoration: none;">Inspect &rarr;</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+{% endblock %}

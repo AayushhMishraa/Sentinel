@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Sentinel FIM{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.badge.critical { background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 1px solid #ff4444; }
+.badge.high { background: rgba(255, 136, 0, 0.2); color: #ff8800; border: 1px solid #ff8800; }
+.badge.medium { background: rgba(255, 204, 0, 0.2); color: #ffcc00; border: 1px solid #ffcc00; }
+.badge.low { background: rgba(51, 181, 229, 0.2); color: #33b5e5; border: 1px solid #33b5e5; }
+.badge.info { background: rgba(170, 170, 170, 0.2); color: #aaaaaa; border: 1px solid #aaaaaa; }
+.badge.status-open { background: rgba(255, 68, 68, 0.15); color: #ff6666; }
+.badge.status-approved { background: rgba(0, 255, 159, 0.15); color: #00ff9f; }
+.badge.status-rejected { background: rgba(255, 136, 0, 0.15); color: #ffaa33; }
+.diff-container { background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: var(--font-code); font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+.diff-line-add { color: #00ff9f; background: rgba(0,255,159,0.05); }
+.diff-line-del { color: #ff4444; background: rgba(255,68,68,0.05); }
+.diff-line-hdr { color: #33b5e5; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+.stat-val { font-size: 26px; font-weight: 700; margin-top: 4px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">SENTINEL <span>File Integrity Monitor</span></div>
+  <nav>
+    <a href="{{ url_for('index') }}" class="on">Alerts</a>
+  </nav>
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

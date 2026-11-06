@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Alert #{{ alert.id }} · Sentinel{% endblock %}
+{% block content %}
+<section class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h2>Alert #{{ alert.id }} Overview</h2>
+    <div>
+      <span class="badge {{ alert.severity }}">{{ alert.severity }}</span>
+      <span class="badge status-{{ alert.status }}">{{ alert.status }}</span>
+    </div>
+  </div>
+
+  <dl>
+    <dt>Target Path</dt><dd style="font-family: var(--font-code);">{{ alert.path }}</dd>
+    <dt>Host ID</dt><dd>{{ alert.host_id }}</dd>
+    <dt>Root ID</dt><dd>{{ alert.root_id }}</dd>
+    <dt>Change Kinds</dt><dd>{{ alert.kinds | join(', ') }}</dd>
+    <dt>Behavioral Signals</dt>
+    <dd>
+      {% if alert.signals %}
+        <span style="color: #ff4444; font-weight: 700;">{{ alert.signals | join(', ') }}</span>
+      {% else %}
+        <span class="muted">None (Static Integrity Anomaly)</span>
+      {% endif %}
+    </dd>
+    <dt>Summary</dt><dd>{{ alert.summary }}</dd>
+    <dt>Event Count</dt><dd>{{ alert.count }}</dd>
+    {% if alert.resolution %}
+      <dt>Resolution</dt>
+      <dd class="ok">
+        {{ alert.status | upper }} by <b>{{ alert.resolution.actor }}</b>
+        {% if alert.resolution.note %} — <i>"{{ alert.resolution.note }}"</i>{% endif %}
+      </dd>
+    {% endif %}
+  </dl>
+
+  {% if alert.status == 'open' %}
+  <div style="margin-top: 24px; display: flex; gap: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+    <form action="{{ url_for('resolve_alert_route', alert_id=alert.id, action='approve') }}" method="POST" onsubmit="return confirm('Approve change and update baseline?');">
+      <input type="hidden" name="actor" value="dashboard-admin">
+      <button type="submit" style="background: var(--ok); color: #000; font-weight: 700; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer;">
+        &check; Approve (Update Baseline)
+      </button>
+    </form>
+    <form action="{{ url_for('resolve_alert_route', alert_id=alert.id, action='reject') }}" method="POST" onsubmit="return confirm('Reject change and maintain drift flag?');">
+      <input type="hidden" name="actor" value="dashboard-admin">
+      <button type="submit" style="background: var(--bad); color: #fff; font-weight: 700; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer;">
+        &cross; Reject (Keep Drift / Revert)
+      </button>
+    </form>
+  </div>
+  {% endif %}
+  <p style="margin-top: 24px;"><a href="{{ url_for('index') }}">&larr; Back to Alerts Feed</a></p>
+</section>
+
+<section class="card">
+  <h2>Cryptographic & Content Evidence</h2>
+  {% if latest_diff %}
+    <div style="margin-bottom: 8px; font-size: 13px; color: var(--muted);">Unified Diff (Old &rarr; New):</div>
+    <div id="diff-box" class="diff-container"></div>
+    {% if diff_truncated %}
+      <p class="muted" style="margin-top: 6px; font-size: 11px;">[Diff was truncated for length]</p>
+    {% endif %}
+  {% else %}
+    <p class="muted">No text diff available (binary file, content capture disabled, or attribute-only change).</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Safe textContent rendering to prevent HTML injection (XSS)
+const rawDiff = {{ latest_diff | tojson }};
+const box = document.getElementById('diff-box');
+if (box && rawDiff) {
+  const lines = rawDiff.split('\n');
+  lines.forEach(line => {
+    const div = document.createElement('div');
+    div.textContent = line;
+    if (line.startsWith('+') && !line.startsWith('+++')) {
+      div.className = 'diff-line-add';
+    } else if (line.startsWith('-') && !line.startsWith('---')) {
+      div.className = 'diff-line-del';
+    } else if (line.startsWith('@@') || line.startsWith('---') || line.startsWith('+++')) {
+      div.className = 'diff-line-hdr';
+    }
+    box.appendChild(div);
+  });
+}
+</script>
+{% endblock %}
