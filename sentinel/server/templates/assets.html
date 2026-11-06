@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Monitored Assets · Sentinel{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Connected Host Agents</h2>
+  {% if not hosts %}
+    <p class="muted">No agents registered yet.</p>
+  {% else %}
+    <table class="incidents-table" style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+          <th style="padding: 10px;">Host ID</th>
+          <th style="padding: 10px;">Hostname</th>
+          <th style="padding: 10px;">Version</th>
+          <th style="padding: 10px;">Status</th>
+          <th style="padding: 10px;">Last Heartbeat</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in hosts %}
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td style="padding: 10px; font-family: var(--font-code);">{{ h.host_id }}</td>
+          <td style="padding: 10px;">{{ h.name }}</td>
+          <td style="padding: 10px;">v{{ h.agent_version }}</td>
+          <td style="padding: 10px;">
+            {% if h.is_online %}
+              <span class="badge online">ONLINE</span>
+            {% else %}
+              <span class="badge offline">OFFLINE</span>
+            {% endif %}
+          </td>
+          <td style="padding: 10px; color: var(--muted);">{{ h.last_seen_str }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+<section class="card" style="margin-top: 24px;">
+  <h2>Monitored Folders &amp; Protection Modes</h2>
+  <table class="incidents-table" style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+        <th style="padding: 10px;">Path ID</th>
+        <th style="padding: 10px;">Monitored Location</th>
+        <th style="padding: 10px;">Mode</th>
+        <th style="padding: 10px;">Decoys</th>
+        <th style="padding: 10px;">Content Capture</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in paths %}
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <td style="padding: 10px; font-family: var(--font-code);">{{ p.id }}</td>
+        <td style="padding: 10px; font-family: var(--font-code);">{{ p.path }}</td>
+        <td style="padding: 10px;">
+          {% if p.mode == 'protect' %}
+            <span class="badge" style="background: rgba(0,255,159,0.2); color: #00ff9f; border: 1px solid #00ff9f;">PROTECT (AUTO-RESTORE)</span>
+          {% else %}
+            <span class="badge" style="background: rgba(51,181,229,0.2); color: #33b5e5; border: 1px solid #33b5e5;">MONITOR ONLY</span>
+          {% endif %}
+        </td>
+        <td style="padding: 10px;">{% if p.decoys %}<span class="ok">&check; Active</span>{% else %}<span class="muted">&cross; Disabled</span>{% endif %}</td>
+        <td style="padding: 10px;">{% if p.capture_content %}<span class="ok">&check; Text Diffs</span>{% else %}<span class="muted">&cross; Metadata Only</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

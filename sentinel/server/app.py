@@ -45,7 +45,47 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None) -> Flask:
             "info": sum(1 for a in alerts if a.severity == "info" and a.status == "open"),
             "total_open": sum(1 for a in alerts if a.status == "open"),
         }
-        return render_template("alerts.html", alerts=alerts, stats=stats)
+
+        # Calculate SVG change-over-time path (24 data points)
+        points = [max(1, (a.count if i < len(alerts) else (i % 3 + 1))) for i, a in enumerate(alerts[:24])]
+        while len(points) < 24:
+            points.append(1)
+        max_v = max(points)
+        width, height = 600, 100
+        step = width / (len(points) - 1)
+        d_line = f"M 0 {height - int((points[0] / max_v) * 80)}"
+        for i in range(1, len(points)):
+            x = int(i * step)
+            y = int(height - (points[i] / max_v) * 80)
+            d_line += f" L {x} {y}"
+        d_area = f"{d_line} L {width} {height} L 0 {height} Z"
+
+        return render_template(
+            "alerts.html",
+            alerts=alerts,
+            stats=stats,
+            chart_line_path=d_line,
+            chart_area_path=d_area,
+        )
+
+    @app.route("/assets")
+    def assets_view():
+        hosts = []
+        now = time.time()
+        if hasattr(repo, "_get_connection"):
+            with repo._get_connection() as conn:
+                for row in conn.execute("SELECT * FROM hosts ORDER BY last_seen DESC"):
+                    h = dict(row)
+                    h["is_online"] = (now - h["last_seen"]) < 90
+                    h["last_seen_str"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(h["last_seen"]))
+                    hosts.append(h)
+
+        sample_paths = [
+            {"id": "ssh", "path": "~/.ssh", "mode": "monitor", "decoys": False, "capture_content": True},
+            {"id": "web", "path": "/var/www/html", "mode": "monitor", "decoys": True, "capture_content": False},
+            {"id": "docs", "path": "~/important", "mode": "protect", "decoys": True, "capture_content": True},
+        ]
+        return render_template("assets.html", hosts=hosts, paths=sample_paths)
 
     @app.route("/alerts/<int:alert_id>")
     def alert_detail(alert_id: int):

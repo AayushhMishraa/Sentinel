@@ -18,6 +18,8 @@
 .badge.status-open { background: rgba(255, 68, 68, 0.15); color: #ff6666; }
 .badge.status-approved { background: rgba(0, 255, 159, 0.15); color: #00ff9f; }
 .badge.status-rejected { background: rgba(255, 136, 0, 0.15); color: #ffaa33; }
+.badge.online { background: rgba(0, 255, 159, 0.2); color: #00ff9f; border: 1px solid #00ff9f; }
+.badge.offline { background: rgba(170, 170, 170, 0.2); color: #888; border: 1px solid #666; }
 .diff-container { background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: var(--font-code); font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
 .diff-line-add { color: #00ff9f; background: rgba(0,255,159,0.05); }
 .diff-line-del { color: #ff4444; background: rgba(255,68,68,0.05); }
@@ -25,13 +27,18 @@
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; margin-bottom: 24px; }
 .stat-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
 .stat-val { font-size: 26px; font-weight: 700; margin-top: 4px; }
+.legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 12px; }
+.legend-item { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+.legend-item b { color: #fff; font-family: var(--font-code); }
 </style>
 </head>
 <body>
 <header class="top">
   <div class="brand">SENTINEL <span>File Integrity Monitor</span></div>
   <nav>
-    <a href="{{ url_for('index') }}" class="on">Alerts</a>
+    <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}on{% endif %}">Alerts Feed</a>
+    <a href="{{ url_for('assets_view') }}" class="{% if request.endpoint == 'assets_view' %}on{% endif %}">Monitored Assets</a>
+    <a href="{{ url_for('report_view') }}" target="_blank">Compliance Report</a>
   </nav>
 </header>
 <main>
