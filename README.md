@@ -1,150 +1,147 @@
-# Rewind: Behavioral Anti-Ransomware Defense for Linux
+# Sentinel & Rewind: Autonomous File Integrity Monitoring and Ransomware Defense
 
-**Detects. Stopped. Undone.**
-
-Rewind is a behavior-based anti-ransomware system for Linux that detects attacks **without signatures**, stops the attacker process, and **automatically restores** damaged files from verified clean snapshots.
-
-Traditional antivirus matches known malware signatures — a new ransomware sample bypasses it. Rewind asks a different question: **"what is this process doing?"** Bulk-encrypting 25 files in 5 seconds is a behavior, regardless of what malware code is doing it. And because detection without recovery is not enough, Rewind's real differentiator is the **time machine**: it undoes the damage and verifies every restored file with SHA-256.
+**Sentinel** is an enterprise File Integrity Monitoring (FIM) and behavioral defense system built on top of the **Rewind** ransomware response engine.
 
 ---
 
-## How it works
+## Architecture Overview
 
-The pipeline:
-
-1. **File change detected** by the watcher (`watchdog`/inotify)
-2. **Signal fused** by the detection engine (DECOY, SPEED, ENTROPY, SUSTAINED, SLOW_SUSPICION)
-3. **Verdict decided**: CLEAN → save known-good copy; SUSPICIOUS → pause snapshots; CONFIRMED → respond
-4. **Response**: `SIGSTOP` freezes the attacker, `SIGKILL` terminates the tree, quiet-period confirmed
-5. **Recovery**: newest clean snapshot restored atomically, alien files quarantined
-6. **Verification**: SHA-256 of every restored file compared against the original manifest
-
-**Detection signals** (any one can trigger; combinations are stronger):
-
-- **DECOY** — tampered with a `!DECOY_*` bait file (attackers iterate alphabetically, hit the trap first)
-- **SPEED** — 25+ distinct files modified within 5 seconds
-- **ENTROPY** — file content turned from readable text (~4.2 bits/byte) to encrypted noise (≥ 7.5)
-- **SUSTAINED** — one signal persisted 3+ seconds without a break
-- **SLOW_SUSPICION** — 3+ distinct files turned to noise within 60 seconds (catches slow attackers)
-
----
-
-## Architecture
-
-| Layer | Purpose | Key files |
-|---|---|---|
-| **Watcher** | File change events + process PID attribution via `psutil`/inotify | `watcher/file_watcher.py` |
-| **Detection** | Fuse 5 signals into CLEAN / SUSPICIOUS / CONFIRMED verdict | `detection/detection_engine.py` |
-| **Response** | SIGSTOP then SIGKILL the attacker process tree (R2 guarded) | `response/response_engine.py` |
-| **Recovery** | Snapshots + delayed-promotion known-good + atomic restore + SHA-256 verify | `recovery/` |
-| **Dashboard** | Live status, incident feed, timeline, guarded Simulate buttons | `dashboard/` |
-
-**Stack:** Python 3.14 · Flask · psutil · watchdog · SQLite · pytest
-**Platform:** Linux (inotify, POSIX signals — deliberate platform target)
-
----
-
-## Testing & evaluation
-
-**228 automated tests** across unit, integration, and live acceptance scenarios.
-
-**13 acceptance scenarios** covering every spec requirement, traced in [`docs/acceptance_matrix.md`](docs/acceptance_matrix.md):
-
-| ID | Scenario | Result |
-|---|---|---|
-| S1a | Decoy path attack | ✅ |
-| S1b | Speed+entropy no-decoys | ✅ |
-| S1-live | Dashboard Simulate button → real attack | ✅ |
-| S2 | Attacker in a separate process family | ✅ |
-| S3a | Strong XOR (high entropy) | ✅ |
-| S3b | **Stealth weak XOR (SUSTAINED catches it)** | ✅ |
-| S3c | Legit zip → no alarm | ✅ |
-| S3d | Legit tar → no alarm | ✅ |
-| S3e | Legit edits → trusted after 10 s | ✅ |
-| S3f | Legit bulk edit → no alarm | ✅ |
-| S4 | Snapshot timer mid-attack | ✅ |
-| S5 | No echo alarm after restore | ✅ |
-| S6 | Unattributed → kill nobody, restore still happens | ✅ |
-| C.10 | Slow-burn attacker (1 file / 3 s) | ✅ |
-
-**Evaluation harness** runs each scenario 5× and reports median + worst-case detection time — see [`evaluation/results.md`](evaluation/results.md).
+```
+                                      +---------------------------------------------+
+                                      |             SENTINEL SERVER                 |
+                                      |  (Flask Dashboard + API v1 + SQLite Repo)   |
+                                      |                                             |
+                                      |  * Live Alerts Feed & SVG Velocity Chart    |
+                                      |  * Unified Line Diffs & Approval Actions    |
+                                      |  * Monitored Assets & Compliance Reporting  |
+                                      +---------------------------------------------+
+                                                             ^
+                                                             | HTTP / Bearer Token
+                                                             | (Versioned Envelopes S-1)
+                                                             v
++-----------------------------------------------------------------------------------+
+|                                 SENTINEL AGENT                                    |
+|                                                                                   |
+|  +--------------------+    +--------------------+    +-------------------------+  |
+|  | FileWatcher        |--->| Debounce Buffer    |--->| Classifier & Diff       |  |
+|  | (inotify / psutil) |    | (0.5s quiet window)|    | (vs Local Baseline DB)  |  |
+|  +--------------------+    +--------------------+    +-------------------------+  |
+|                                                                    |              |
+|                                                                    v              |
+|  +--------------------+    +--------------------+    +-------------------------+  |
+|  | DiskBufferedSink   |<---| Policy Rules Engine|<---| Behavioral Pipeline     |  |
+|  | (Durability / F11) |    | (Severity Rating)  |    | (Decoy/Speed/Entropy)   |  |
+|  +--------------------+    +--------------------+    +-------------------------+  |
+|                                                                                   |
+|  Mode: MONITOR (Alert & audit only) | Mode: PROTECT (Automated rollback & isolate)|
++-----------------------------------------------------------------------------------+
+```
 
 ---
 
-## Quick start
+## Comparison with Traditional FIM Tools
 
-Setup:
-
-    git clone https://github.com/AayushhMishraa/rewind.git
-    cd rewind
-    python3 -m venv .venv && source .venv/bin/activate
-    pip install -r requirements.txt
-    python3 generate_samples.py
-
-Run Rewind (needs root for /proc handle inspection):
-
-    sudo -E env "PATH=$PATH" python3 main.py
-
-In another terminal, start the dashboard:
-
-    python3 dashboard/app.py
-    # open http://127.0.0.1:5000
-
-Click any **Simulate** button in the dashboard to trigger a real (harmless) attacker and watch Rewind detect, kill, and restore in real time.
+| Capability | Sentinel | AIDE | Tripwire | Wazuh |
+|---|---|---|---|---|
+| **Integrity Baseline** | Cryptographic SHA-256 + permissions + owner + entropy | Cryptographic hash + metadata | Cryptographic hash + metadata | Cryptographic hash + metadata |
+| **Real-Time Detection** | Instantaneous filesystem notifications + debouncing | Batch cron jobs | Scheduled polling / agent | Inotify / syscheck module |
+| **Behavioral Defense Layer** | Built-in canary decoys, modification velocity, entropy heuristics | None (static check) | None (static check) | Rule correlation engine |
+| **Process Attribution** | Kernel open file attribution to PID & process name | None | Best-effort with auditd | Auditd integration |
+| **Response & Recovery** | Optional automated attacker isolation (`SIGKILL`) & 100% snapshot rollback | None (alert only) | None | Active response scripts |
+| **Operator Experience** | Dark cinematic terminal console, inline SVG charts, one-click Approve/Reject | CLI report text | Enterprise Web UI | Kibana / Opensearch |
+| **Content Diffs** | Unified line diffs with sensitive secret deny-list protection | Plain text diffs | Text diffs | Text diffs |
 
 ---
 
-## Repository structure
+## Behavioral Signals Legend
 
-    rewind/
-    ├── config.py                      # single source of truth: thresholds, paths, intervals
-    ├── main.py                        # RewindApp orchestrator + CLI entry
-    ├── generate_samples.py            # 100 test files + sandbox marker + original hashes
-    │
-    ├── core/                          # pipeline router, events, state, logger, activity
-    ├── watcher/                       # file watcher + PID attribution + pause control
-    ├── detection/                     # 5 signals → verdict
-    ├── recovery/                      # snapshots, known-good (delayed promotion), restore
-    ├── response/                      # R2 guard, SIGSTOP/SIGKILL, attribution sweep
-    ├── dashboard/                     # Flask app + templates + static assets
-    │
-    ├── test_ransomware/               # harmless attackers (v1, v2, --weak, slow_3s, wiper)
-    ├── tests/                         # 228 automated tests
-    ├── docs/acceptance_matrix.md      # spec → test → result traceability
-    ├── evaluation/                    # 5x reliability harness + results.md
-    └── tools/                         # CLI inspectors + SHA-256 verifier
+- **`[DECOY]`**: Canary trap tripped — a bait file placed in monitored locations was altered or deleted.
+- **`[SPEED]`**: Mass velocity anomaly — 25 or more distinct files changed within a 5-second burst.
+- **`[ENTROPY]`**: Content scrambling heuristic — file turned into random-looking data.
+- **`[SUSTAINED]`**: Persistent noise — suspicious file tampering continued for 3+ seconds without a break.
+- **`[SLOW_SUSPICION]`**: Low-and-slow tampering — subtle, rate-limited file corruption over time.
 
 ---
 
-## Design rules (enforced, not just documented)
+## Configuration Reference (`sentinel.yaml`)
 
-- **R1 — Separation:** detection modules judge, they don't act
-- **R2 — Runtime guard:** `respond_to_attack` raises `RuntimeError` if `verdict.level != "CONFIRMED"`
-- **R3 — Traceability:** every action logged as JSON-lines with `incident_trace_id`
-- **R4 — Process safety:** multi-sweep attribution; if ambiguous, kill nobody
-- **R5 — Self-protection:** never kill Rewind itself, its ancestor shells, or PID 1
-- **R6 — Snapshot safety:** no snapshot during active alert / cooldown
-- **R7 — Sandbox guard:** attacker scripts refuse to run outside a `.REWIND_SANDBOX` folder
-- **R8 — Behavior over names:** no allowlists; decisions based on what a process *does*
+```yaml
+host_id: auto            # auto = socket.gethostname()
+server:
+  url: "http://127.0.0.1:5000"
+  token_env: "SENTINEL_TOKEN"
+
+defaults:
+  exclude:
+    - ".git/**"
+    - "node_modules/**"
+    - "__pycache__/**"
+    - "*.tmp"
+  new_file_severity: "info"
+  max_files: 50000
+  max_hash_bytes: 104857600   # 100 MB cap
+
+paths:
+  - id: "ssh"
+    path: "~/.ssh"
+    mode: "monitor"
+    include: ["authorized_keys", "config"]
+    decoys: false
+    capture_content: true
+
+  - id: "web"
+    path: "/var/www/html"
+    mode: "monitor"
+    decoys: true
+
+  - id: "docs"
+    path: "~/important"
+    mode: "protect"
+    decoys: true
+
+rules:
+  - match: "**/authorized_keys"
+    severity: "critical"
+    reason: "SSH access list changed"
+  - match: "/etc/passwd"
+    severity: "critical"
+  - match: "/etc/shadow"
+    severity: "critical"
+  - match: "**/index.*"
+    under: "web"
+    severity: "high"
+
+notify:
+  webhooks:
+    - url: "http://127.0.0.1:9000/hook"
+      min_severity: "high"
+```
 
 ---
 
-## Known limitations (documented honestly)
+## Quickstart
 
-- **Platform-specific:** Linux only (inotify, POSIX signals). Porting to Windows/Mac would require replacing the watcher and kill layers (~3 modules).
-- **Slow-burn detection has a cost:** 3+ files encrypted by a *user* (not an attacker) within 60 s is flagged and rolled back. Deliberate trade-off — safety over convenience.
-- **Snapshot can bake in damage:** a snapshot taken *after* an undetected slow wiper becomes the new reference. Documented in the known-good fix's docstring.
-- **Containers/cgroups:** not supported. A malicious process inside a container is not isolated from the host pipeline.
-- **Attacker variants not fully tested:** `copy-then-delete`, `rename-then-encrypt`, `fork-spray`, and compression-based attacks are future work.
+```bash
+# 1. Activate environment
+source .venv/bin/activate
+
+# 2. Initialize baseline
+python3 -m sentinel.cli -c sentinel.yaml init-baseline
+
+# 3. Run Sentinel in foreground
+python3 -m sentinel.cli -c sentinel.yaml run
+
+# 4. Open dashboard
+# Visit http://127.0.0.1:5000 in your browser
+```
 
 ---
 
-## Why this project
+## Known Limitations
 
-Ransomware defense requires both **detection** (behavioral, not signature-based) and **recovery** (because detection alone can't prevent damage — it can only limit it). Rewind implements both, with real automated tests against real attacker processes, and honestly documents its limitations. It's not production-ready EDR, but the architecture — multi-signal fusion, confirmed-only response, atomic verified restore — mirrors what commercial products do.
-
-**License:** MIT (educational/demo use).
-
----
-
-*Detected. Stopped. Undone.*
+- **Co-located Storage**: Backups, baselines, and logs reside on the same Linux host; a root-level attacker could tamper with local SQLite stores.
+- **Read Operations**: Reads are not audited, only modifications, creations, deletions, and metadata changes.
+- **Entropy Heuristics**: Compressed files (zip/tar/mp4) naturally exhibit high entropy; entropy is an indicator, not proof of encryption.
+- **Slow Attackers**: Tampering slower than 3 noisy files per 60 seconds evades the slow-burn rule.
+- **Process Attribution**: Process attribution is best-effort via `/proc` open file handles; transient processes may report unknown PID.
+- **Single Host / Localhost Focus**: Default setup targets single host Linux / WSL2 environments.
