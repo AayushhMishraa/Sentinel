@@ -2,6 +2,7 @@
 
 Evaluates change paths against configured rules (first match wins)
 and escalates severity when behavioral detection signals fire.
+Ensures severity is never lowered once assigned.
 """
 
 from __future__ import annotations
@@ -31,11 +32,11 @@ SEVERITY_ORDER = {
 }
 
 
-def _higher_severity(sev1: str, sev2: str) -> str:
-    """Return the more severe of two levels."""
-    o1 = SEVERITY_ORDER.get(sev1.lower(), 1)
-    o2 = SEVERITY_ORDER.get(sev2.lower(), 1)
-    return sev1 if o1 >= o2 else sev2
+def higher_severity(sev1: str, sev2: str) -> str:
+    """Return the higher of two severities; never lowers."""
+    o1 = SEVERITY_ORDER.get((sev1 or "info").lower(), 1)
+    o2 = SEVERITY_ORDER.get((sev2 or "info").lower(), 1)
+    return (sev1 or "info").lower() if o1 >= o2 else (sev2 or "info").lower()
 
 
 def evaluate_rules(
@@ -58,23 +59,25 @@ def evaluate_rules(
         if rule.under and rule.under != root_id:
             continue
         pat = rule.match.replace("\\", "/").strip("/")
+
         # Check against relative path, absolute path, and filename
         if (
             fnmatch.fnmatch(norm_rel, pat)
             or fnmatch.fnmatch(norm_abs, pat)
             or fnmatch.fnmatch(filename, pat)
+            or (pat.endswith("/**") and (norm_rel == pat[:-3] or norm_rel.startswith(pat[:-3] + "/")))
+            or (pat.startswith("**/") and fnmatch.fnmatch(norm_rel, pat[3:]))
         ):
-            return rule.severity
+            return rule.severity.lower()
 
     # Fallback to default severity by change kind
-    if "created" in change.kinds:
-        base = default_new_severity
-    else:
-        # Highest severity among detected kinds
-        base = "info"
-        for k in change.kinds:
+    base = "info"
+    for k in change.kinds:
+        if k == "created":
+            k_sev = default_new_severity.lower()
+        else:
             k_sev = DEFAULT_KIND_SEVERITY.get(k, "info")
-            base = _higher_severity(base, k_sev)
+        base = higher_severity(base, k_sev)
 
     return base
 
@@ -82,21 +85,24 @@ def evaluate_rules(
 def escalate_with_signals(base_severity: str, signals: List[str]) -> str:
     """Escalate severity when behavioral anomaly signals are present.
 
+    Rules:
     - DECOY -> critical
     - SPEED + ENTROPY -> critical
     - SLOW_SUSPICION -> critical
     - SPEED or SUSTAINED alone -> high
+    Never lowers base_severity.
     """
-    sev = base_severity.lower()
-    sigs = set(signals)
+    sev = (base_severity or "info").lower()
+    sigs = set(signals or [])
 
+    escalated = sev
     if "DECOY" in sigs:
-        return "critical"
-    if "SPEED" in sigs and "ENTROPY" in sigs:
-        return "critical"
-    if "SLOW_SUSPICION" in sigs:
-        return "critical"
-    if "SPEED" in sigs or "SUSTAINED" in sigs:
-        return _higher_severity(sev, "high")
+        escalated = "critical"
+    elif "SPEED" in sigs and "ENTROPY" in sigs:
+        escalated = "critical"
+    elif "SLOW_SUSPICION" in sigs:
+        escalated = "critical"
+    elif "SPEED" in sigs or "SUSTAINED" in sigs:
+        escalated = higher_severity(sev, "high")
 
-    return sev
+    return higher_severity(sev, escalated)
