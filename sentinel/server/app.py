@@ -13,15 +13,19 @@ import time
 from typing import Optional
 from flask import Flask, abort, jsonify, redirect, render_template, request, url_for
 
+from sentinel.server.api_v1 import api_v1
 from sentinel.server.repo import Repository, SQLiteRepository
 
 
-def create_sentinel_app(repo: Repository) -> Flask:
+def create_sentinel_app(repo: Repository, token: Optional[str] = None) -> Flask:
     app = Flask(
         __name__,
         template_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), "templates")),
         static_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), "static")),
     )
+    app.config["REPO"] = repo
+    app.config["SENTINEL_TOKEN"] = token
+    app.register_blueprint(api_v1)
 
     @app.before_request
     def guard_hosts():
@@ -99,3 +103,4 @@ def create_sentinel_app(repo: Repository) -> Flask:
         })
 
     return app
+
