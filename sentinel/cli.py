@@ -52,6 +52,9 @@ def cmd_init_baseline(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    import threading
+    from sentinel.server.app import create_sentinel_app
+
     cfg = load_settings(args.config)
     store = BaselineStore(args.baseline_db)
     repo = SQLiteRepository(args.repo_db)
@@ -60,6 +63,16 @@ def cmd_run(args: argparse.Namespace) -> int:
     engine = SentinelEngine(config=cfg, baseline_store=store, sink=sink)
     print(f"Starting Sentinel FIM engine for host '{cfg.host_id}'...")
     engine.start()
+
+    # Start embedded Flask web dashboard on port 5000
+    token = cfg.server.get_token()
+    app = create_sentinel_app(repo=repo, token=token)
+    server_thread = threading.Thread(
+        target=lambda: app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False),
+        daemon=True,
+    )
+    server_thread.start()
+    print("Dashboard web UI running at: http://127.0.0.1:5000")
     print("Sentinel engine is watching. Press Ctrl+C to stop.")
     try:
         while True:
@@ -83,3 +96,4 @@ def main(argv: list = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

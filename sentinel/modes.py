@@ -102,8 +102,11 @@ class ProtectAdapter:
         self.control = control
         self.plant_decoys = plant_decoys
 
-        os.makedirs(self.protected_dir, exist_ok=True)
-        os.makedirs(self.safety_dir, exist_ok=True)
+        try:
+            os.makedirs(self.protected_dir, exist_ok=True)
+            os.makedirs(self.safety_dir, exist_ok=True)
+        except OSError:
+            pass
 
         self.state = ThreatState()
         self.activity = ActivityMonitor()
