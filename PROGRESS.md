@@ -60,3 +60,18 @@
 - Ran: pytest tests/sentinel/ (43 passed)
 - Checkpoints F10, F12: ALL PASSED
 
+## Stage W4a: UI Polish, SVG Telemetry & Signal Legend
+- Built: Monitored assets view (/assets), inline SVG velocity graph, plain-English signal legend
+- Ran: pytest tests/sentinel/test_sentinel_dashboard.py (4 passed)
+- Checkpoint: PASSED
+
+## Stage W4b: 5x Evaluation Matrix Runner
+- Built: evaluation/run_eval_sentinel.py, docs/sentinel_acceptance_matrix.md
+- Ran: 60 total runs across F1-F12 (100% passed)
+- Checkpoint: PASSED
+
+## Stage W4c: Documentation, Demo Script & Final Tag
+- Built: README.md, DEMO_SCRIPT.md, tagged sentinel-v1
+- Ran: pytest tests/sentinel/ (43 passed)
+- Checkpoint: ALL STAGES & WEEKS 1-4 COMPLETED (TAG sentinel-v1)
+
