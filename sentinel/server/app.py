@@ -81,12 +81,23 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
                     h["last_seen_str"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(h["last_seen"]))
                     hosts.append(h)
 
-        sample_paths = [
-            {"id": "ssh", "path": "~/.ssh", "mode": "monitor", "decoys": False, "capture_content": True},
-            {"id": "web", "path": "/var/www/html", "mode": "monitor", "decoys": True, "capture_content": False},
-            {"id": "docs", "path": "~/important", "mode": "protect", "decoys": True, "capture_content": True},
-        ]
-        return render_template("assets.html", hosts=hosts, paths=sample_paths)
+        paths = []
+        if engine and hasattr(engine, "config") and engine.config.paths:
+            for p in engine.config.paths:
+                paths.append({
+                    "id": p.id,
+                    "path": p.path,
+                    "mode": p.mode,
+                    "decoys": bool(p.decoys),
+                    "capture_content": bool(p.capture_content),
+                })
+        else:
+            paths = [
+                {"id": "ssh", "path": "~/.ssh", "mode": "monitor", "decoys": False, "capture_content": True},
+                {"id": "web", "path": "/var/www/html", "mode": "monitor", "decoys": True, "capture_content": False},
+                {"id": "docs", "path": "~/important", "mode": "protect", "decoys": True, "capture_content": True},
+            ]
+        return render_template("assets.html", hosts=hosts, paths=paths)
 
     @app.route("/alerts/<int:alert_id>")
     def alert_detail(alert_id: int):

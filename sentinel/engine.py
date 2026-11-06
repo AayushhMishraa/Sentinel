@@ -364,6 +364,20 @@ class SentinelEngine:
     def start(self) -> None:
         self._running = True
         self._heartbeat_stop.clear()
+
+        # Auto-register local host in standalone mode (LocalSink)
+        if isinstance(self.sink, LocalSink):
+            try:
+                import socket
+                hostname = socket.gethostname()
+                self.sink.repo.record_host(
+                    host_id=self.config.host_id,
+                    name=hostname,
+                    agent_version="0.1.0",
+                )
+            except Exception:
+                pass
+
         self._heartbeat_thread = threading.Thread(
             target=self._heartbeat_worker, name="sentinel-heartbeat", daemon=True
         )
@@ -383,7 +397,17 @@ class SentinelEngine:
         log("sentinel_stopped", host_id=self.config.host_id)
 
     def _heartbeat_worker(self) -> None:
-        """Write periodic heartbeat log lines (every 30s) to keep dashboard status alive (G5)."""
+        """Write periodic heartbeat log lines (every 30s) and update local host heartbeat in standalone mode (G5)."""
         while not self._heartbeat_stop.is_set():
             log("sentinel_heartbeat", host_id=self.config.host_id)
+            if isinstance(self.sink, LocalSink):
+                try:
+                    import socket
+                    self.sink.repo.record_host(
+                        host_id=self.config.host_id,
+                        name=socket.gethostname(),
+                        agent_version="0.1.0",
+                    )
+                except Exception:
+                    pass
             self._heartbeat_stop.wait(30.0)
