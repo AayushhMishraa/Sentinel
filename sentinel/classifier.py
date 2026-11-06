@@ -9,8 +9,9 @@ from __future__ import annotations
 import difflib
 import os
 import stat
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
+from core.events import FileEvent
 from sentinel.baseline_store import (
     BaselineEntry,
     BaselineStore,
@@ -68,6 +69,8 @@ def classify_file_change(
     baseline_entry: Optional[BaselineEntry],
     max_hash_bytes: int = 104857600,
     capture_content: bool = False,
+    initial_mode: Optional[int] = None,
+    events: Optional[List[FileEvent]] = None,
 ) -> Optional[Change]:
     """Compare real file at root_path/relpath against baseline_entry.
 
@@ -134,8 +137,31 @@ def classify_file_change(
             diff_text, diff_truncated = generate_text_diff(
                 "", current_entry.content, os.path.basename(norm_rel)
             )
+
+        kinds = ["created"]
+        file_mode = stat.S_IMODE(current_entry.mode)
+
+        # Check for permission changes during creation / debounce window
+        has_permission_change = False
+        if initial_mode is not None and stat.S_IMODE(initial_mode) != file_mode:
+            has_permission_change = True
+        elif events and len(events) > 1:
+            saw_create = False
+            for ev in events:
+                if ev.event_type == "created":
+                    saw_create = True
+                elif saw_create and ev.event_type in ("modified", "permissions", "attrib"):
+                    if (file_mode & 0o111) != 0 or file_mode == 0o777:
+                        has_permission_change = True
+                        break
+        elif (file_mode & 0o111) != 0 or file_mode == 0o777:
+            has_permission_change = True
+
+        if has_permission_change and "permissions" not in kinds:
+            kinds.append("permissions")
+
         return Change(
-            kinds=["created"],
+            kinds=kinds,
             old=None,
             new=new_meta,
             diff=diff_text,
@@ -189,3 +215,4 @@ def classify_file_change(
         diff=diff_text,
         diff_truncated=diff_truncated,
     )
+

@@ -8,9 +8,10 @@ and emits versioned EventEnvelopes through the configured Sink.
 from __future__ import annotations
 
 import os
+import stat
 import threading
 import time
-from typing import Callable, Dict, List, Optional, Set
+from typing import Callable, Dict, List, Optional, Set, Tuple, Union
 
 from core.events import FileEvent
 from core.logger import log
@@ -52,9 +53,9 @@ class WatchedPath:
         self.root_path = config.resolved_path
         self.watcher: Optional[FileWatcher] = None
 
-        # Debouncing per relative path: {relpath: (last_event_time, latest_event)}
+        # Debouncing per relative path: {relpath: (last_event_time, events_list, initial_mode)}
         self._debounce_lock = threading.Lock()
-        self._pending_events: Dict[str, Tuple[float, FileEvent]] = {}
+        self._pending_events: Dict[str, Tuple[float, List[FileEvent], Optional[int]]] = {}
         self._stop_event = threading.Event()
         self._debounce_thread: Optional[threading.Thread] = None
 
@@ -128,26 +129,50 @@ class WatchedPath:
             if not matched:
                 return
 
+        abspath = os.path.join(self.root_path, rel)
         with self._debounce_lock:
-            self._pending_events[rel] = (time.time(), event)
+            if rel in self._pending_events:
+                last_ts, ev_list, init_mode = self._pending_events[rel]
+                ev_list.append(event)
+                self._pending_events[rel] = (time.time(), ev_list, init_mode)
+            else:
+                init_mode = None
+                if os.path.exists(abspath):
+                    try:
+                        init_mode = stat.S_IMODE(os.stat(abspath).st_mode)
+                    except OSError:
+                        init_mode = None
+                self._pending_events[rel] = (time.time(), [event], init_mode)
 
     def _debounce_worker(self) -> None:
         while not self._stop_event.is_set():
             now = time.time()
-            ready: List[Tuple[str, FileEvent]] = []
+            ready: List[Tuple[str, List[FileEvent], Optional[int]]] = []
 
             with self._debounce_lock:
-                for rel, (last_ts, ev) in list(self._pending_events.items()):
+                for rel, (last_ts, ev_list, init_mode) in list(self._pending_events.items()):
                     if now - last_ts >= DEBOUNCE_QUIET_SECONDS:
-                        ready.append((rel, ev))
+                        ready.append((rel, ev_list, init_mode))
                         del self._pending_events[rel]
 
-            for rel, ev in ready:
-                self._process_debounced_event(rel, ev)
+            for rel, ev_list, init_mode in ready:
+                self._process_debounced_event(rel, ev_list, init_mode)
 
             time.sleep(0.1)
 
-    def _process_debounced_event(self, rel: str, event: FileEvent) -> None:
+    def _process_debounced_event(
+        self,
+        rel: str,
+        events: Union[FileEvent, List[FileEvent]],
+        initial_mode: Optional[int] = None,
+    ) -> None:
+        if isinstance(events, list):
+            ev_list = events
+            event = ev_list[-1]
+        else:
+            ev_list = [events]
+            event = events
+
         abspath = os.path.join(self.root_path, rel)
         base_entry = self.baseline_store.get_entry(self.config.id, rel)
 
@@ -158,6 +183,8 @@ class WatchedPath:
             baseline_entry=base_entry,
             max_hash_bytes=self.global_config.defaults.max_hash_bytes,
             capture_content=self.config.capture_content,
+            initial_mode=initial_mode,
+            events=ev_list,
         )
 
         if not change:
@@ -183,8 +210,10 @@ class WatchedPath:
         # Signals (behavioral layer escalation)
         signals: List[str] = []
         if self.protect_adapter:
-            if self.protect_adapter.decoys.was_decoy_touched(event):
-                signals.append("DECOY")
+            for ev in ev_list:
+                if self.protect_adapter.decoys.was_decoy_touched(ev):
+                    signals.append("DECOY")
+                    break
             actor_key = event.pid if (event.pid and event.pid > 0) else "default"
             self.protect_adapter.speed.record_event(actor_key, abspath, event.timestamp)
             if self.protect_adapter.speed.get_score(actor_key, event.timestamp):
@@ -195,7 +224,11 @@ class WatchedPath:
         final_sev = escalate_with_signals(base_sev, signals)
 
         # PID attribution (G6)
-        pid = event.pid if event.pid and event.pid > 0 else None
+        pid = None
+        for ev in reversed(ev_list):
+            if ev.pid and ev.pid > 0:
+                pid = ev.pid
+                break
         proc_name = None
         if not pid and os.path.exists(abspath):
             detected_pid = get_process_touching_file(abspath)
