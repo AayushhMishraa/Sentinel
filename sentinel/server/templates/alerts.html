@@ -88,40 +88,44 @@
   {% if not alerts %}
     <p class="muted" style="margin-top: 16px;">No alerts recorded. All monitored files match current baselines.</p>
   {% else %}
-    <table class="incidents-table" style="width: 100%; border-collapse: collapse; margin-top: 16px;">
-      <thead>
-        <tr style="border-bottom: 1px solid var(--border); text-align: left;">
-          <th style="padding: 10px;">ID</th>
-          <th style="padding: 10px;">Severity</th>
-          <th style="padding: 10px;">Target Path</th>
-          <th style="padding: 10px;">Host</th>
-          <th style="padding: 10px;">Kinds</th>
-          <th style="padding: 10px;">Signals</th>
-          <th style="padding: 10px;">Status</th>
-          <th style="padding: 10px;">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in alerts %}
-        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-          <td style="padding: 10px;">#{{ a.id }}</td>
-          <td style="padding: 10px;"><span class="badge {{ a.severity }}">{{ a.severity }}</span></td>
-          <td style="padding: 10px; font-family: var(--font-code); font-size: 13px;">{{ a.path }}</td>
-          <td style="padding: 10px;">{{ a.host_id }}</td>
-          <td style="padding: 10px;">{{ a.kinds | join(', ') }}</td>
-          <td style="padding: 10px;">
-            {% if a.signals %}
-              <span style="color: #ff4444; font-weight: 600;">{{ a.signals | join(', ') }}</span>
-            {% else %}
-              <span class="muted">—</span>
-            {% endif %}
-          </td>
-          <td style="padding: 10px;"><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
-          <td style="padding: 10px;"><a href="{{ url_for('alert_detail', alert_id=a.id) }}" style="color: var(--ok); text-decoration: none;">Inspect &rarr;</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div style="overflow-x: auto; margin-top: 16px;">
+      <table class="incidents-table" style="width: 100%; border-collapse: collapse; min-width: 780px;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+            <th style="padding: 10px 12px; white-space: nowrap;">ID</th>
+            <th style="padding: 10px 12px; white-space: nowrap;">Severity</th>
+            <th style="padding: 10px 12px; word-break: break-all;">Target Path</th>
+            <th style="padding: 10px 12px; white-space: nowrap;">Host</th>
+            <th style="padding: 10px 12px; white-space: nowrap;">Kinds</th>
+            <th style="padding: 10px 12px; white-space: nowrap;">Signals</th>
+            <th style="padding: 10px 12px; white-space: nowrap;">Status</th>
+            <th style="padding: 10px 16px; white-space: nowrap; text-align: right; min-width: 110px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in alerts %}
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <td style="padding: 10px 12px; white-space: nowrap;">#{{ a.id }}</td>
+            <td style="padding: 10px 12px; white-space: nowrap;"><span class="badge {{ a.severity }}">{{ a.severity }}</span></td>
+            <td style="padding: 10px 12px; font-family: var(--font-code); font-size: 13px; word-break: break-all;">{{ a.path }}</td>
+            <td style="padding: 10px 12px; white-space: nowrap;">{{ a.host_id }}</td>
+            <td style="padding: 10px 12px; white-space: nowrap;">{{ a.kinds | join(', ') }}</td>
+            <td style="padding: 10px 12px; white-space: nowrap;">
+              {% if a.signals %}
+                <span style="color: #ff4444; font-weight: 600;">{{ a.signals | join(', ') }}</span>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+            <td style="padding: 10px 12px; white-space: nowrap;"><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
+            <td style="padding: 10px 16px; white-space: nowrap; text-align: right;">
+              <a href="{{ url_for('alert_detail', alert_id=a.id) }}" style="color: var(--ok); text-decoration: none; font-weight: 600; display: inline-block; padding: 4px 8px; border-radius: 4px; background: rgba(0,255,159,0.08); border: 1px solid rgba(0,255,159,0.2);">Inspect &rarr;</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
 </section>
 {% endblock %}
