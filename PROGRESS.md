@@ -45,3 +45,18 @@
 - Ran: pytest tests/test_dashboard.py tests/sentinel/ (45 passed)
 - Checkpoint: PASSED
 
+## Stage W3a: API v1, Token Auth, Idempotent Ingestion & HttpSink
+- Built: sentinel/server/api_v1.py, HttpSink in sentinel/sinks.py, tests/sentinel/test_api_v1.py
+- Ran: pytest tests/sentinel/test_api_v1.py (3 passed)
+- Checkpoint: PASSED
+
+## Stage W3b: Offline Buffering, Reconnect Replay & Checkpoint F11
+- Built: DiskBufferedHttpSink in sentinel/sinks.py, sentinel/agent.py, scripts/demo_two_agents.sh, tests/sentinel/test_offline_buffer_f11.py
+- Ran: pytest tests/sentinel/test_offline_buffer_f11.py (1 passed)
+- Checkpoint F11: PASSED
+
+## Stage W3c: Webhook Notifier, Printable Report & Checkpoints F10, F12
+- Built: sentinel/notifier.py (retries & backoff), sentinel/report.py (/report?days=30), tests/sentinel/test_checkpoints_f10_f12.py
+- Ran: pytest tests/sentinel/ (43 passed)
+- Checkpoints F10, F12: ALL PASSED
+
