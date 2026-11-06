@@ -22,6 +22,7 @@ from sentinel.baseline_store import (
     scan_and_save_baseline,
 )
 from sentinel.classifier import classify_file_change
+from sentinel.modes import MonitorAdapter, ProtectAdapter
 from sentinel.models import EventEnvelope
 from sentinel.rules import escalate_with_signals, evaluate_rules
 from sentinel.settings import PathSettings, SentinelConfig
@@ -60,6 +61,18 @@ class WatchedPath:
         # Last reported sha256 to prevent duplicate alerts (G3)
         self._last_reported_hashes: Dict[str, str] = {}
 
+        # Protect adapter if mode is protect
+        self.protect_adapter: Optional[ProtectAdapter] = None
+        if self.config.mode == "protect":
+            safety_dir = os.path.join(os.path.dirname(self.root_path), f".safety_{self.config.id}")
+            self.protect_adapter = ProtectAdapter(
+                root_id=self.config.id,
+                path=self.root_path,
+                safety_dir=safety_dir,
+                control=self.control,
+                plant_decoys=self.config.decoys,
+            )
+
     def start(self) -> None:
         if not os.path.isdir(self.root_path):
             os.makedirs(self.root_path, exist_ok=True)
@@ -88,6 +101,10 @@ class WatchedPath:
     def _on_fs_event(self, event: FileEvent) -> None:
         if self.control.is_paused():
             return
+
+        # If protect mode, feed event directly into behavioral pipeline immediately
+        if self.protect_adapter:
+            self.protect_adapter.process_event(event)
 
         rel = os.path.relpath(event.path, self.root_path).replace("\\", "/")
         if rel.startswith(".."):
@@ -164,6 +181,16 @@ class WatchedPath:
 
         # Signals (behavioral layer escalation)
         signals: List[str] = []
+        if self.protect_adapter:
+            if self.protect_adapter.decoys.was_decoy_touched(event):
+                signals.append("DECOY")
+            actor_key = event.pid if (event.pid and event.pid > 0) else "default"
+            self.protect_adapter.speed.record_event(actor_key, abspath, event.timestamp)
+            if self.protect_adapter.speed.get_score(actor_key, event.timestamp):
+                signals.append("SPEED")
+        elif self.config.decoys and "DECOY" in os.path.basename(rel):
+            signals.append("DECOY")
+
         final_sev = escalate_with_signals(base_sev, signals)
 
         # PID attribution (G6)
@@ -278,9 +305,24 @@ class SentinelEngine:
         return False
 
     def reject_alert(self, alert_id: int, actor: str, note: str = "") -> bool:
-        """Reject an alert: marks alert rejected, baseline is NOT updated (drift remains)."""
+        """Reject an alert: marks alert rejected, baseline is NOT updated (drift remains).
+        In protect mode, single-file revert restores file from baseline content.
+        """
         if isinstance(self.sink, LocalSink):
-            return self.sink.repo.resolve_alert(alert_id, "reject", actor, note)
+            alert = self.sink.repo.get_alert(alert_id)
+            if not alert:
+                return False
+            resolved = self.sink.repo.resolve_alert(alert_id, "reject", actor, note)
+            if not resolved:
+                return False
+
+            wp = self.watched_paths.get(alert.root_id)
+            if wp and wp.protect_adapter:
+                rel = os.path.relpath(alert.path, wp.root_path).replace("\\", "/")
+                entry = self.baseline_store.get_entry(alert.root_id, rel)
+                if entry and entry.content is not None:
+                    wp.protect_adapter.revert_file(rel, entry.content)
+            return True
         return False
 
     def start(self) -> None:
