@@ -25,3 +25,23 @@
 - Ran: pytest tests/sentinel/ (22 passed)
 - Checkpoints F1, F4, F5, F6: ALL PASSED
 
+## Stage W2a: Severity Rules & Behavioral Escalation
+- Built: sentinel/rules.py updates, tests/sentinel/test_rules.py
+- Ran: pytest tests/sentinel/test_rules.py (5 passed)
+- Checkpoint: PASSED
+
+## Stage W2b: Alert Lifecycle & Checkpoints F2, F3
+- Built: sentinel/engine.py approve/reject logic, tests/sentinel/test_lifecycle_f2_f3.py
+- Ran: pytest tests/sentinel/test_lifecycle_f2_f3.py (2 passed)
+- Checkpoints F2, F3: ALL PASSED
+
+## Stage W2c: Protect Mode, Safety Caps & Checkpoints F7, F8, F9
+- Built: sentinel/modes.py, sentinel/engine.py protect integration, tests/sentinel/test_protect_f7_f8_f9.py
+- Ran: pytest tests/sentinel/test_protect_f7_f8_f9.py (4 passed)
+- Checkpoints F7, F8, F9: ALL PASSED
+
+## Stage W2d: Sentinel Dashboard & Alert Inspection UI
+- Built: sentinel/server/app.py, templates (base, alerts, alert_detail), static styles, tests/sentinel/test_sentinel_dashboard.py
+- Ran: pytest tests/test_dashboard.py tests/sentinel/ (45 passed)
+- Checkpoint: PASSED
+
