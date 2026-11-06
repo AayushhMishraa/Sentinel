@@ -66,7 +66,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     # Start embedded Flask web dashboard on port 5000
     token = cfg.server.get_token()
-    app = create_sentinel_app(repo=repo, token=token)
+    app = create_sentinel_app(repo=repo, token=token, engine=engine)
     server_thread = threading.Thread(
         target=lambda: app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False),
         daemon=True,

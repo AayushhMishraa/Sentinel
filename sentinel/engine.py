@@ -106,7 +106,8 @@ class WatchedPath:
         if self.protect_adapter:
             self.protect_adapter.process_event(event)
 
-        rel = os.path.relpath(event.path, self.root_path).replace("\\", "/")
+        target_path = event.dest_path if (event.event_type == "moved" and event.dest_path) else event.path
+        rel = os.path.relpath(target_path, self.root_path).replace("\\", "/")
         if rel.startswith(".."):
             return
 
@@ -276,33 +277,35 @@ class SentinelEngine:
     def approve_alert(self, alert_id: int, actor: str, note: str = "") -> bool:
         """Approve an alert: update agent-side baseline to current file state, record audit."""
         # Resolve alert in repository
-        if isinstance(self.sink, LocalSink):
-            alert = self.sink.repo.get_alert(alert_id)
-            if not alert:
-                return False
-            resolved = self.sink.repo.resolve_alert(alert_id, "approve", actor, note)
-            if not resolved:
-                return False
+        repo = self.sink.repo if isinstance(self.sink, LocalSink) else None
+        if not repo:
+            return False
 
-            # Update baseline entry for this path
-            wp = self.watched_paths.get(alert.root_id)
-            if wp:
-                rel = os.path.relpath(alert.path, wp.root_path).replace("\\", "/")
-                new_entry = inspect_file(
-                    alert.root_id,
-                    wp.root_path,
-                    rel,
-                    self.config.defaults.max_hash_bytes,
-                    wp.config.capture_content,
-                )
-                if new_entry:
-                    self.baseline_store.set_entry(new_entry)
-                    # Update internal reported hash to prevent repeat alerts
-                    wp._last_reported_hashes[rel] = new_entry.sha256
-                elif not os.path.exists(alert.path):
-                    self.baseline_store.remove_entry(alert.root_id, rel)
-            return True
-        return False
+        alert = repo.get_alert(alert_id)
+        if not alert:
+            return False
+        resolved = repo.resolve_alert(alert_id, "approve", actor, note)
+        if not resolved:
+            return False
+
+        # Update baseline entry for this path
+        wp = self.watched_paths.get(alert.root_id)
+        if wp:
+            rel = os.path.relpath(alert.path, wp.root_path).replace("\\", "/")
+            new_entry = inspect_file(
+                alert.root_id,
+                wp.root_path,
+                rel,
+                self.config.defaults.max_hash_bytes,
+                wp.config.capture_content,
+            )
+            if new_entry:
+                self.baseline_store.set_entry(new_entry)
+                wp._last_reported_hashes[rel] = new_entry.sha256
+            elif not os.path.exists(alert.path):
+                self.baseline_store.remove_entry(alert.root_id, rel)
+                wp._last_reported_hashes.pop(rel, None)
+        return True
 
     def reject_alert(self, alert_id: int, actor: str, note: str = "") -> bool:
         """Reject an alert: marks alert rejected, baseline is NOT updated (drift remains).

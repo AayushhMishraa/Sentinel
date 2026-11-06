@@ -18,7 +18,7 @@ from sentinel.server.api_v1 import api_v1
 from sentinel.server.repo import Repository, SQLiteRepository
 
 
-def create_sentinel_app(repo: Repository, token: Optional[str] = None) -> Flask:
+def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=None) -> Flask:
     app = Flask(
         __name__,
         template_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), "templates")),
@@ -26,6 +26,7 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None) -> Flask:
     )
     app.config["REPO"] = repo
     app.config["SENTINEL_TOKEN"] = token
+    app.config["ENGINE"] = engine
     app.register_blueprint(api_v1)
 
     @app.before_request
@@ -128,7 +129,14 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None) -> Flask:
             abort(400)
         actor = request.form.get("actor", "web-admin")
         note = request.form.get("note", "")
-        repo.resolve_alert(alert_id, action, actor=actor, note=note)
+        engine = app.config.get("ENGINE")
+        if engine:
+            if action == "approve":
+                engine.approve_alert(alert_id, actor=actor, note=note)
+            else:
+                engine.reject_alert(alert_id, actor=actor, note=note)
+        else:
+            repo.resolve_alert(alert_id, action, actor=actor, note=note)
         return redirect(url_for("alert_detail", alert_id=alert_id))
 
     @app.route("/report")
