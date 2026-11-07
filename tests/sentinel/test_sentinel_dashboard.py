@@ -45,6 +45,7 @@ def test_dashboard_alert_detail_and_diff(dashboard_client):
     resp = client.get("/alerts/1")
     assert resp.status_code == 200
     html = resp.get_data(as_text=True)
+    assert "<title>(1) Alerts - Alert #1 · Sentinel</title>" in html
     assert "Alert #1 Overview" in html
     assert "+new" in html
     # Verify strong confirmation modal for approve
@@ -81,4 +82,43 @@ def test_dashboard_host_guard(dashboard_client):
     client, _ = dashboard_client
     resp = client.get("/", headers={"Host": "evil.com"})
     assert resp.status_code == 403
+
+
+def test_dynamic_tab_title_and_components(dashboard_client):
+    """Verifies dynamic tab title, counter animation ID, and toast notification container."""
+    client, repo = dashboard_client
+
+    # 1. With 1 open alert, title should reflect '(1) Alerts - Sentinel'
+    resp = client.get("/")
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+    assert "<title>(1) Alerts - Sentinel</title>" in html
+    assert 'id="toast-container"' in html
+    assert 'id="open-alerts-count"' in html
+    assert 'id="latest-alert-meta"' in html
+    assert "showToast" in html
+
+    # 2. Add 2 more open alerts (total 3) -> title should become '(3) Alerts - Sentinel'
+    for i in (2, 3):
+        meta = Meta(sha256=f"hash{i}", size=10, mode=0o644, uid=1000, gid=1000)
+        ch = Change(kinds=["modified"], old=meta, new=meta)
+        env = EventEnvelope(
+            root_id="ssh",
+            path=f"/etc/ssh/file_{i}.txt",
+            host_id="box-alpha",
+            ts=1700000000.0 + i,
+            change=ch,
+            severity="high",
+            summary=f"File {i} modified",
+        )
+        repo.upsert_alert(env)
+
+    resp3 = client.get("/")
+    assert "<title>(3) Alerts - Sentinel</title>" in resp3.get_data(as_text=True)
+
+    # 3. Resolve all alerts (0 open) -> title should become 'Sentinel'
+    repo.bulk_resolve_alerts(action="reject", actor="admin")
+    resp_zero = client.get("/")
+    assert "<title>Sentinel</title>" in resp_zero.get_data(as_text=True)
+
 

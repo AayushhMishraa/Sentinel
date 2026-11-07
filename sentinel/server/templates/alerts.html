@@ -1,10 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Alerts Feed · Sentinel{% endblock %}
+{% block title %}Sentinel{% endblock %}
 {% block content %}
+<div id="latest-alert-meta"
+     data-max-id="{{ alerts[0].id if alerts else 0 }}"
+     data-newest-severity="{{ alerts[0].severity if alerts else 'info' }}"
+     data-open-count="{{ stats.total_open }}"
+     style="display: none;"></div>
+
 <section class="stats-grid">
   <div class="stat-box">
     <div class="muted">OPEN ALERTS</div>
-    <div class="stat-val" style="color: #fff;">{{ stats.total_open }}</div>
+    <div id="open-alerts-count" class="stat-val" style="color: #fff;">{{ stats.total_open }}</div>
   </div>
   <div class="stat-box">
     <div class="muted">CRITICAL</div>
@@ -143,6 +149,104 @@
 
 {% block scripts %}
 <script>
+function showToast(severity, message, duration) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const toast = document.createElement('div');
+  const sevLower = (severity || 'info').toLowerCase();
+  toast.className = `toast toast-${sevLower}`;
+  toast.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="badge ${sevLower}">${severity.toUpperCase()}</span>
+      <span class="toast-msg">${message}</span>
+    </div>
+    <button class="toast-close" onclick="this.parentElement.remove(); sessionStorage.removeItem('sentinel_active_toast');">&times;</button>
+  `;
+  container.appendChild(toast);
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      if (toast.parentElement) toast.remove();
+      sessionStorage.removeItem('sentinel_active_toast');
+    }, 300);
+  }, duration || 4000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const metaEl = document.getElementById('latest-alert-meta');
+  if (!metaEl) return;
+
+  const currentMaxId = parseInt(metaEl.dataset.maxId || '0', 10);
+  const newestSev = (metaEl.dataset.newestSeverity || 'medium').toLowerCase();
+  const openCount = parseInt(metaEl.dataset.openCount || '0', 10);
+
+  // 1. Dynamic Tab Title
+  if (openCount > 0) {
+    document.title = `(${openCount}) Alerts - Sentinel`;
+  } else {
+    document.title = 'Sentinel';
+  }
+
+  // 2. Counter Animation on change
+  const prevOpenCountStr = sessionStorage.getItem('sentinel_prev_open_count');
+  const countEl = document.getElementById('open-alerts-count');
+  if (prevOpenCountStr !== null) {
+    const prevOpenCount = parseInt(prevOpenCountStr, 10);
+    if (countEl && openCount !== prevOpenCount) {
+      countEl.classList.add('bounce');
+      setTimeout(() => countEl.classList.remove('bounce'), 800);
+    }
+  }
+  sessionStorage.setItem('sentinel_prev_open_count', openCount.toString());
+
+  // 3. Toast Notifications (Rate limited to max 1 per 5 seconds)
+  const lastSeenIdStr = sessionStorage.getItem('sentinel_last_seen_id');
+  const lastToastTime = parseInt(sessionStorage.getItem('sentinel_last_toast_time') || '0', 10);
+  const now = Date.now();
+
+  // Restore active toast if persisting across reload
+  const activeToastJson = sessionStorage.getItem('sentinel_active_toast');
+  if (activeToastJson) {
+    try {
+      const activeToast = JSON.parse(activeToastJson);
+      if (activeToast && activeToast.expires > now) {
+        showToast(activeToast.severity, activeToast.message, activeToast.expires - now);
+      } else {
+        sessionStorage.removeItem('sentinel_active_toast');
+      }
+    } catch (e) {
+      sessionStorage.removeItem('sentinel_active_toast');
+    }
+  }
+
+  if (lastSeenIdStr === null) {
+    // Initial page visit: seed with currentMaxId so existing alerts don't spam
+    sessionStorage.setItem('sentinel_last_seen_id', currentMaxId.toString());
+  } else {
+    const lastSeenId = parseInt(lastSeenIdStr, 10);
+    if (currentMaxId > lastSeenId) {
+      sessionStorage.setItem('sentinel_last_seen_id', currentMaxId.toString());
+      if (now - lastToastTime >= 5000) {
+        const msg = `New [${newestSev.toUpperCase()}] Alert: File modified.`;
+        const duration = 4000;
+        sessionStorage.setItem('sentinel_last_toast_time', now.toString());
+        sessionStorage.setItem('sentinel_active_toast', JSON.stringify({
+          severity: newestSev,
+          message: msg,
+          expires: now + duration
+        }));
+        showToast(newestSev, msg, duration);
+      }
+    }
+  }
+});
+
 // Auto-poll feed every 2 seconds
 setTimeout(() => {
   window.location.reload();

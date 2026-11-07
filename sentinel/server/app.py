@@ -29,6 +29,15 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
     app.config["ENGINE"] = engine
     app.register_blueprint(api_v1)
 
+    @app.context_processor
+    def inject_global_stats():
+        try:
+            alerts = repo.list_alerts()
+            cnt = sum(1 for a in alerts if a.status == "open")
+        except Exception:
+            cnt = 0
+        return {"open_alerts_count": cnt}
+
     @app.before_request
     def guard_hosts():
         host = request.host.split(":")[0]

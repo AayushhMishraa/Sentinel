@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}Sentinel FIM{% endblock %}</title>
+<title>{% if open_alerts_count and open_alerts_count > 0 %}({{ open_alerts_count }}) Alerts - {% elif stats and stats.total_open > 0 %}({{ stats.total_open }}) Alerts - {% endif %}{% block title %}Sentinel{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -29,10 +29,93 @@ main { max-width: 1400px; margin: 40px auto; padding: 0 24px; }
 .diff-line-hdr { color: #33b5e5; }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; margin-bottom: 24px; }
 .stat-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
-.stat-val { font-size: 26px; font-weight: 700; margin-top: 4px; }
+.stat-val { font-size: 26px; font-weight: 700; margin-top: 4px; transition: transform 0.2s ease; }
+@keyframes scaleBounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); color: #00ff9f; text-shadow: 0 0 12px rgba(0,255,159,0.5); }
+  65% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.stat-val.bounce {
+  display: inline-block;
+  animation: scaleBounce 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
 .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 12px; }
 .legend-item { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
 .legend-item b { color: #fff; font-family: var(--font-code); }
+
+/* Sleek Dark Mode Toast Notifications */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  min-width: 300px;
+  max-width: 420px;
+  background: #0f131a;
+  color: #fff;
+  border-radius: 8px;
+  padding: 14px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast.toast-critical {
+  border: 1px solid #ff4444;
+  border-left: 5px solid #ff4444;
+}
+.toast.toast-high {
+  border: 1px solid #ff8800;
+  border-left: 5px solid #ff8800;
+}
+.toast.toast-medium {
+  border: 1px solid #ffcc00;
+  border-left: 5px solid #ffcc00;
+}
+.toast.toast-low {
+  border: 1px solid #33b5e5;
+  border-left: 5px solid #33b5e5;
+}
+.toast.toast-info {
+  border: 1px solid #aaaaaa;
+  border-left: 5px solid #aaaaaa;
+}
+.toast-msg {
+  font-weight: 600;
+  line-height: 1.4;
+  color: #f0f0f0;
+}
+.toast-close {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+}
+.toast-close:hover {
+  color: #fff;
+}
 </style>
 </head>
 <body>
@@ -47,6 +130,7 @@ main { max-width: 1400px; margin: 40px auto; padding: 0 24px; }
 <main>
 {% block content %}{% endblock %}
 </main>
+<div id="toast-container"></div>
 {% block scripts %}{% endblock %}
 </body>
 </html>
