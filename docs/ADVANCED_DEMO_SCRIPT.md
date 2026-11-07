@@ -9,7 +9,8 @@ This guide provides the complete set of advanced demonstration tests for **Senti
 | # | Demo Scenario | Key Command | Signals Caught | Dashboard Visibility | Defense Action |
 |---|---|---|---|---|---|
 | **1** | **Protect Mode Kill & Auto-Restore** | `ransomware_v1.py --target protected_folder --rate 20 --hold 0.04` | `[DECOY]`, `[SPEED]` | Alert #X `CRITICAL` `OPEN` | `SIGKILL` attacker + 100% rollback |
-| **2** | **Stealth Slow-Burn Attack** | `slow_3s.py --target protected_folder --avoid-decoys --interval 2.5 --limit 3` | `[ENTROPY]`, `[SLOW_SUSPICION]` | Alert escalates `MEDIUM` &rarr; `CRITICAL` | Caught by sliding entropy memory window |
+| **2a** | **Stealth Slow-Burn Attack** | `slow_3s.py --target protected_folder --avoid-decoys --interval 2.5 --limit 3` | `[ENTROPY]`, `[SLOW_SUSPICION]` | Alert escalates `MEDIUM` &rarr; `CRITICAL` | Caught by sliding entropy memory window |
+| **2b** | **Stealth XOR Sustained Attack** | `ransomware_v2.py --target protected_folder --avoid-decoys --weak --rate 12` | `[SPEED]`, `[SUSTAINED]` | Alert escalates `HIGH` &rarr; `CRITICAL` | Sustained rule catches low-entropy attacker; SIGKILL + restore |
 | **3** | **Distributed Fleet Heartbeat API** | `curl -X POST /api/v1/heartbeat` | Agent telemetry | Monitored Assets shows `aws-prod-web-02` `ONLINE` | Multi-agent centralization |
 | **4** | **Single-File Revert on Reject** | Human clicks "Reject" on drift | Drift detection | Alert status changes to `REJECTED` | File reverted from Golden Baseline |
 | **5** | **Bulk Acknowledge / SOC Audit** | Recursive `chmod 644` | Policy rules | Counter resets to `0 OPEN`, audit preserved | Mass triage without losing audit trail |
@@ -107,6 +108,45 @@ finished: 3 files overwritten
    - The alert for the 3rd file fires with **Severity**: Red **`[CRITICAL]`**!
    - Signals: **`[ENTROPY, SLOW_SUSPICION]`**!
    - *Meaning:* Sentinel's suspicion tracker recognized that 3 distinct files became noise in under 60 seconds. The slow-burn rule escalated the attack to CRITICAL and alerted the SOC.
+
+---
+
+## Advanced Test 2b: Stealth Low-Entropy Sustained Attack (`SUSTAINED`)
+
+### What this test does:
+Demonstrates defense against stealth XOR attackers that try to bypass both canary traps and entropy detection:
+1. **Avoids decoys** (`--avoid-decoys`), so canary traps don't fire.
+2. **Uses weak 4-byte repeating XOR** (`--weak`), keeping file entropy low (~4.5), so individual `[ENTROPY]` alerts do not fire.
+3. Rapidly tampers with files. Sentinel initially flags rapid edits as `HIGH [SPEED]` (`SUSPICIOUS`).
+4. Because `SPEED` alone could be a legitimate bulk edit (like `git checkout` or batch processing), Sentinel does not kill immediately. Instead, its continuous suspicion tracker observes the activity.
+5. Once anomalous activity continues unbroken for 3.0+ seconds, the **`SUSTAINED` rule** fires, escalating the verdict to **`CRITICAL` [SPEED, SUSTAINED]**, terminating the process with `SIGKILL`, and rolling back all tampered files.
+
+### Terminal 2 Command:
+```bash
+.venv/bin/python3 test_ransomware/ransomware_v2.py --target protected_folder --avoid-decoys --weak --rate 12
+```
+
+### What You See in Terminal 2:
+```text
+ransomware_v2 (harmless test tool, weak (4-byte repeating key)): attacking 100 files in /home/aayush/rewind_project/protected_folder
+Killed
+```
+
+### What You See on the Dashboard:
+1. Initial alerts:
+   - **Severity**: Orange/Yellow `[HIGH]`
+   - **Signals**: `[SPEED]`
+   - *Meaning:* Rapid edits triggered the velocity check, but Sentinel waited to confirm whether it was sustained malicious activity or a quick human bulk operation.
+2. The Escalation (at ~3.0-3.5 seconds into attack):
+   - **Severity**: Red **`[CRITICAL]`**
+   - **Signals**: Red **`[SPEED, SUSTAINED]`**!
+   - *Meaning:* Continuous anomalous activity exceeded 3.0 seconds unbroken. Protect Mode confirmed the attack, dispatched `SIGKILL`, and initiated automatic snapshot rollback.
+
+### Verification of Integrity:
+```bash
+head -n 2 protected_folder/document_000.txt
+```
+**Expected Output:** Clean, readable English text (100% restored).
 
 ---
 
