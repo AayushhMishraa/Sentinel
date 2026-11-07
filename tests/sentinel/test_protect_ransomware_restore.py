@@ -95,7 +95,7 @@ def test_protect_mode_kills_ransomware_avoid_decoys_and_restores(tmp_path):
     for i in range(30):
         name = f"document_{i:03d}.txt"
         fp = watch_dir / name
-        content = f"SENSITIVE FINANCIAL AUDIT #{i}\n" * 50
+        content = f"SENSITIVE FINANCIAL AUDIT #{i}\n" * 150
         fp.write_text(content, encoding="utf-8")
         original_contents[name] = content
 

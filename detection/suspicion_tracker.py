@@ -18,7 +18,7 @@ class SuspicionTracker:
         self.gap = (config.SUSPICION_GAP_RESET_SECONDS
                     if gap_seconds is None else gap_seconds)
         self._state = {}               # actor -> [first_suspicious_time, last_suspicious_time]
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self.slow_files = config.SLOW_BURN_FILES if slow_files is None else slow_files
         self.slow_window = (config.SLOW_BURN_WINDOW_SECONDS
                             if slow_window is None else slow_window)

@@ -193,7 +193,7 @@ class WatchedPath:
             self._debounce_thread.join(timeout=2.0)
 
     def _on_fs_event(self, event: FileEvent) -> None:
-        if self.control.should_drop(event.timestamp):
+        if self.control.is_paused():
             return
 
         target_path = event.dest_path if (event.event_type == "moved" and event.dest_path) else event.path
@@ -363,12 +363,12 @@ class WatchedPath:
                 if self.protect_adapter.tracker.slow_burn(now_ts):
                     signals.append("SLOW_SUSPICION")
                 if hasattr(self.protect_adapter.tracker, "is_sustained"):
-                    if (
-                        self.protect_adapter.tracker.is_sustained(actor_key, now_ts)
-                        or (event.pid and self.protect_adapter.tracker.is_sustained(event.pid, now_ts))
-                        or self.protect_adapter.tracker.is_sustained(None, now_ts)
-                    ):
-                        signals.append("SUSTAINED")
+                    with self.protect_adapter.tracker._lock:
+                        tracker_keys = list(self.protect_adapter.tracker._state.keys())
+                    for k in tracker_keys:
+                        if self.protect_adapter.tracker.is_sustained(k, now_ts):
+                            signals.append("SUSTAINED")
+                            break
         elif self.config.decoys and "DECOY" in os.path.basename(rel):
             if any(k in change.kinds for k in ("modified", "deleted", "permissions", "owner")):
                 signals.append("DECOY")
@@ -397,7 +397,11 @@ class WatchedPath:
                     proc_name = None
 
         # Ensure rollback happens automatically in protect mode before alert status becomes OPEN
-        is_attack = any(s in ("DECOY", "SPEED", "SLOW_SUSPICION", "SUSTAINED") for s in signals)
+        # Only CONFIRMED verdicts (DECOY, SLOW_SUSPICION, SUSTAINED, or SPEED+ENTROPY) trigger rollback
+        is_attack = (
+            any(s in ("DECOY", "SLOW_SUSPICION", "SUSTAINED") for s in signals)
+            or ("SPEED" in signals and "ENTROPY" in signals)
+        )
         if self.protect_adapter and is_attack:
             self.protect_adapter.rollback(
                 attack_started_at=event.timestamp,
@@ -462,7 +466,22 @@ class SentinelEngine:
             if p_cfg.decoys:
                 from detection.decoy_monitor import DecoyMonitor
                 dm = DecoyMonitor(p_cfg.resolved_path)
-                dm.plant_decoys()
+                all_clean = True
+                for num in (1, 2, 3):
+                    d_p = os.path.join(p_cfg.resolved_path, f"!DECOY_{num:03d}.txt")
+                    if not os.path.isfile(d_p):
+                        all_clean = False
+                        break
+                    try:
+                        curr_h, _ = hash_file_capped(d_p, self.config.defaults.max_hash_bytes)
+                        if curr_h != "dcf738290fd5a1bf663c2fb27adbdb60cc4d41c2eccf80d7ad4832e082561852":
+                            all_clean = False
+                            break
+                    except OSError:
+                        all_clean = False
+                        break
+                if not all_clean:
+                    dm.plant_decoys()
 
             cnt = scan_and_save_baseline(
                 store=self.baseline_store,

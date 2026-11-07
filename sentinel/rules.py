@@ -100,6 +100,8 @@ def escalate_with_signals(base_severity: str, signals: List[str]) -> str:
         escalated = "critical"
     elif "SPEED" in sigs and "ENTROPY" in sigs:
         escalated = "critical"
+    elif "SPEED" in sigs and "SUSTAINED" in sigs:
+        escalated = "critical"
     elif "SLOW_SUSPICION" in sigs:
         escalated = "critical"
     elif "SPEED" in sigs or "SUSTAINED" in sigs:
