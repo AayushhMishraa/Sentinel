@@ -16,6 +16,7 @@ It REFUSES to run anywhere except a marked sandbox (see _sandbox_guard.py).
 import argparse
 import hashlib
 import os
+import signal
 import sys
 import time
 
@@ -25,6 +26,25 @@ sys.path.insert(0, HERE)
 
 import config                      # noqa: E402
 import _sandbox_guard as guard     # noqa: E402
+
+
+def detach_stdin_and_ignore_signals():
+    """Detach simulator from stdin and ignore terminal suspension signals (SIGTSTP, SIGTTIN, SIGTTOU)."""
+    for sig_name in ("SIGTSTP", "SIGTTIN", "SIGTTOU"):
+        sig = getattr(signal, sig_name, None)
+        if sig is not None:
+            try:
+                signal.signal(sig, signal.SIG_IGN)
+            except (ValueError, OSError):
+                pass
+
+    try:
+        devnull = open(os.devnull, "r")
+        os.dup2(devnull.fileno(), sys.stdin.fileno())
+        sys.stdin = devnull
+    except (OSError, AttributeError):
+        pass
+
 
 WEAK_KEY = bytes([0x5A, 0xC3, 0x17, 0x9E])    # pinned by tests; matches the regression tests
 
@@ -71,7 +91,8 @@ def parse_args(argv=None):
     return p.parse_args(argv)
 
 
-def main(argv=None):
+def run_sim_worker(argv=None):
+    detach_stdin_and_ignore_signals()
     args = parse_args(argv)
     if args.rate <= 0:
         print("--rate must be above 0")
@@ -105,6 +126,57 @@ def main(argv=None):
             time.sleep(rest)
     print("finished: %d files overwritten" % done, flush=True)
     return 0
+
+
+def run_supervised_cli():
+    """Spawn worker in an independent session (start_new_session=True) so terminal suspension signals (SIGSTOP/SIGTSTP) never freeze the shell."""
+    env = dict(os.environ, _RANSOMWARE_V2_WORKER="1")
+    import subprocess
+    proc = subprocess.Popen(
+        [sys.executable, os.path.abspath(__file__)] + sys.argv[1:],
+        env=env,
+        start_new_session=True,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+
+    try:
+        while True:
+            line = proc.stdout.readline() if proc.stdout else ""
+            if line:
+                sys.stdout.write(line)
+                sys.stdout.flush()
+
+            ret = proc.poll()
+            if ret is not None:
+                if proc.stdout:
+                    for rem in proc.stdout:
+                        sys.stdout.write(rem)
+                        sys.stdout.flush()
+                if ret < 0:
+                    sig = -ret
+                    if sig == signal.SIGKILL:
+                        sys.stderr.write("Killed\n")
+                    elif sig == signal.SIGTERM:
+                        sys.stderr.write("Terminated\n")
+                return 137 if ret == -signal.SIGKILL else (ret if ret >= 0 else 0)
+
+            time.sleep(0.02)
+    except (KeyboardInterrupt, SystemExit):
+        try:
+            proc.terminate()
+        except OSError:
+            pass
+        return 0
+
+
+def main(argv=None):
+    if argv is not None or os.environ.get("_RANSOMWARE_V2_WORKER") == "1":
+        return run_sim_worker(argv)
+    return run_supervised_cli()
 
 
 if __name__ == "__main__":
