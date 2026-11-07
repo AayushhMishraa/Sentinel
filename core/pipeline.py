@@ -160,7 +160,7 @@ class Pipeline:
         def restore():
             return self.restore_impl(attack_start, protected_dir=self.protected_dir,
                                      safety_dir=self.safety_dir, manifest=self.manifest,
-                                     control=self.control, trace_id=trace)
+                                     control=self.control, trace_id=trace, margin_seconds=0.0)
         return restore
 
     def _response_job(self, event, verdict, attack_start, trace):

@@ -203,6 +203,19 @@ class WatchedPath:
 
         # If protect mode, feed event directly into behavioral pipeline immediately
         if self.protect_adapter:
+            if not event.pid or event.pid <= 0:
+                try:
+                    detected_pid = get_process_touching_file(abspath)
+                    if detected_pid and detected_pid > 0:
+                        event = FileEvent(
+                            path=event.path,
+                            action=event.action,
+                            timestamp=event.timestamp,
+                            pid=detected_pid,
+                            cookie=event.cookie,
+                        )
+                except Exception:
+                    pass
             verdict = self.protect_adapter.process_event(event)
             if verdict and verdict.signals:
                 with self._debounce_lock:
@@ -352,6 +365,15 @@ class WatchedPath:
                     proc_name = psutil.Process(pid).name()
                 except Exception:
                     proc_name = None
+
+        # Ensure rollback happens automatically in protect mode before alert status becomes OPEN
+        is_attack = any(s in ("DECOY", "SPEED", "SLOW_SUSPICION", "SUSTAINED") for s in signals)
+        if self.protect_adapter and is_attack:
+            self.protect_adapter.rollback(
+                attack_started_at=event.timestamp,
+                baseline_store=self.baseline_store,
+                pid=pid,
+            )
 
         summary_parts = [f"File {', '.join(change.kinds)}: {rel}"]
         if pid:

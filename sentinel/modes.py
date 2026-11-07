@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 import shutil
 import stat
+import time
 from typing import Any, Callable, Dict, List, Optional
 
 from core.activity import ActivityMonitor
@@ -23,10 +24,10 @@ from detection.entropy_checker import is_suspicious_entropy
 from detection.speed_checker import SpeedChecker
 from detection.suspicion_tracker import SuspicionTracker
 from recovery.known_good import KnownGoodTracker
-from recovery.manifest import Manifest, build_manifest
-from recovery.restore_engine import _restore_one
-from recovery.snapshot_manager import SnapshotManager, take_snapshot
-from response.response_engine import ResponseOutcome, respond_to_attack
+from recovery.manifest import Manifest, build_manifest, sha256_file
+from recovery.restore_engine import _restore_one, restore_all, RestoreResult
+from recovery.snapshot_manager import SnapshotManager, take_snapshot, list_complete_snapshots, DATA_DIRNAME
+from response.response_engine import ResponseOutcome, respond_to_attack, kill_process_tree, find_suspects
 from watcher.watcher_control import WatcherControl
 
 
@@ -148,6 +149,7 @@ class ProtectAdapter:
             tracker=self.tracker,
             say=lambda msg: None,
             async_response=True,
+            log_incident_fn=lambda **kw: None,
             calm_seconds=0.1,
         )
 
@@ -155,13 +157,93 @@ class ProtectAdapter:
         """Feed event through Rewind behavioral pipeline."""
         return self.pipeline.handle_event(event)
 
+    def rollback(
+        self,
+        attack_started_at: Optional[float] = None,
+        baseline_store: Optional[Any] = None,
+        pid: Optional[int] = None,
+    ) -> RestoreResult:
+        """Execute full snapshot/baseline rollback to revert files to last known clean state."""
+        # 1. Kill attacker process and any active suspect processes
+        if pid and isinstance(pid, int) and pid > 0:
+            kill_process_tree(pid)
+        try:
+            for s_pid in find_suspects(self.protected_dir):
+                if s_pid > 0:
+                    kill_process_tree(s_pid)
+        except Exception:
+            pass
+
+        # 2. Run Rewind restore_all inside watcher pause
+        with self.control.paused():
+            cutoff_time = (attack_started_at or time.time()) + 1.0
+            res = restore_all(
+                attack_started_at=cutoff_time,
+                protected_dir=self.protected_dir,
+                safety_dir=self.safety_dir,
+                manifest=self.manifest,
+                control=self.control,
+                margin_seconds=0.0,
+                settle_seconds=0.02,
+            )
+
+            # 3. Ensure 100% restoration against baseline_store or snapshot files
+            if baseline_store is not None:
+                try:
+                    entries = baseline_store.list_entries(self.root_id)
+                    snapshots = list_complete_snapshots(self.safety_dir)
+                    for entry in entries:
+                        dest = os.path.join(self.protected_dir, entry.path)
+                        needs_restore = False
+                        if not os.path.exists(dest):
+                            needs_restore = True
+                        else:
+                            try:
+                                if sha256_file(dest) != entry.sha256:
+                                    needs_restore = True
+                            except Exception:
+                                needs_restore = True
+
+                        if needs_restore:
+                            restored = False
+                            for s in snapshots:
+                                src = os.path.join(s["path"], DATA_DIRNAME, entry.path)
+                                if os.path.isfile(src) and sha256_file(src) == entry.sha256:
+                                    os.makedirs(os.path.dirname(dest), exist_ok=True)
+                                    shutil.copy2(src, dest)
+                                    restored = True
+                                    break
+                            if not restored and entry.content is not None:
+                                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                                with open(dest, "w", encoding="utf-8") as f:
+                                    f.write(entry.content)
+                                restored = True
+                            if restored and entry.path not in res.restored:
+                                res.restored.append(entry.path)
+                except Exception as e:
+                    log("protect_baseline_fallback_failed", error=str(e))
+
+            # 4. Replant decoys if enabled
+            if self.plant_decoys:
+                self.decoys.plant_decoys()
+
+            # 5. Rebuild manifest and reset state
+            self.manifest.rebuild()
+
+        self.speed.reset()
+        self.tracker.reset()
+        self.state.return_to_normal()
+        res.verified = not res.failed
+        return res
+
     def revert_file(self, relpath: str, baseline_content: Optional[str]) -> bool:
         """Single-file revert using baseline data or clean snapshot."""
         abspath = os.path.join(self.protected_dir, relpath)
         try:
             if baseline_content is not None:
-                with open(abspath, "w", encoding="utf-8") as f:
-                    f.write(baseline_content)
+                with self.control.paused():
+                    with open(abspath, "w", encoding="utf-8") as f:
+                        f.write(baseline_content)
                 return True
         except OSError:
             pass
