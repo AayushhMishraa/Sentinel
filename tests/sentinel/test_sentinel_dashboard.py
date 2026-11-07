@@ -47,6 +47,15 @@ def test_dashboard_alert_detail_and_diff(dashboard_client):
     html = resp.get_data(as_text=True)
     assert "Alert #1 Overview" in html
     assert "+new" in html
+    # Verify strong confirmation modal for approve
+    assert "Are you sure you want to approve this change? This will update the Golden Baseline." in html
+    assert "openApproveModal()" in html
+    assert 'id="approve-modal"' in html
+    # Verify lightweight inline swap for reject (no browser window.confirm popup)
+    assert 'id="reject-container"' in html
+    assert 'id="reject-inline-confirm"' in html
+    assert "Revert to baseline?" in html
+    assert 'onsubmit="return confirm' not in html
 
 
 def test_dashboard_approve_action(dashboard_client):
@@ -58,7 +67,18 @@ def test_dashboard_approve_action(dashboard_client):
     assert alert.resolution["actor"] == "analyst"
 
 
+def test_dashboard_reject_action(dashboard_client):
+    client, repo = dashboard_client
+    resp = client.post("/alerts/1/reject", data={"actor": "analyst", "note": "rejected malicious drift"}, follow_redirects=True)
+    assert resp.status_code == 200
+    alert = repo.get_alert(1)
+    assert alert.status == "rejected"
+    assert alert.resolution["actor"] == "analyst"
+    assert alert.resolution["note"] == "rejected malicious drift"
+
+
 def test_dashboard_host_guard(dashboard_client):
     client, _ = dashboard_client
     resp = client.get("/", headers={"Host": "evil.com"})
     assert resp.status_code == 403
+
