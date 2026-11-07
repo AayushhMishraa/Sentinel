@@ -150,7 +150,14 @@ class WatchedPath:
 
     def start(self) -> None:
         if not os.path.isdir(self.root_path):
-            os.makedirs(self.root_path, exist_ok=True)
+            try:
+                os.makedirs(self.root_path, exist_ok=True)
+            except OSError:
+                pass
+
+        if not os.path.isdir(self.root_path):
+            log("watched_path_skipped_nonexistent", path=self.root_path)
+            return
 
         # Cleanly replant and baseline decoys before watcher starts so old modified decoys never false-alarm
         if self.config.decoys and self.decoy_monitor:

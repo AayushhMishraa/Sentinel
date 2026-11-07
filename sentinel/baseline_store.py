@@ -185,6 +185,9 @@ class BaselineStore:
                 )
         return entries
 
+    def list_entries(self, root_id: str) -> List[BaselineEntry]:
+        return list(self.get_all_entries(root_id).values())
+
     def set_entry(self, entry: BaselineEntry) -> None:
         norm_rel = entry.relpath.replace("\\", "/").strip("/")
         with self._get_connection() as conn:
@@ -332,3 +335,4 @@ def scan_and_save_baseline(
                     return count
 
     return count
+

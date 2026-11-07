@@ -190,10 +190,15 @@ class ProtectAdapter:
             # 3. Ensure 100% restoration against baseline_store or snapshot files
             if baseline_store is not None:
                 try:
-                    entries = baseline_store.list_entries(self.root_id)
+                    if hasattr(baseline_store, "get_all_entries"):
+                        entries = list(baseline_store.get_all_entries(self.root_id).values())
+                    elif hasattr(baseline_store, "list_entries"):
+                        entries = list(baseline_store.list_entries(self.root_id))
+                    else:
+                        entries = []
                     snapshots = list_complete_snapshots(self.safety_dir)
                     for entry in entries:
-                        dest = os.path.join(self.protected_dir, entry.path)
+                        dest = os.path.join(self.protected_dir, entry.relpath)
                         needs_restore = False
                         if not os.path.exists(dest):
                             needs_restore = True
@@ -207,7 +212,7 @@ class ProtectAdapter:
                         if needs_restore:
                             restored = False
                             for s in snapshots:
-                                src = os.path.join(s["path"], DATA_DIRNAME, entry.path)
+                                src = os.path.join(s["path"], DATA_DIRNAME, entry.relpath)
                                 if os.path.isfile(src) and sha256_file(src) == entry.sha256:
                                     os.makedirs(os.path.dirname(dest), exist_ok=True)
                                     shutil.copy2(src, dest)
@@ -218,8 +223,8 @@ class ProtectAdapter:
                                 with open(dest, "w", encoding="utf-8") as f:
                                     f.write(entry.content)
                                 restored = True
-                            if restored and entry.path not in res.restored:
-                                res.restored.append(entry.path)
+                            if restored and entry.relpath not in res.restored:
+                                res.restored.append(entry.relpath)
                 except Exception as e:
                     log("protect_baseline_fallback_failed", error=str(e))
 
