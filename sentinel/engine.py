@@ -64,6 +64,7 @@ class WatchedPath:
 
         # Protect adapter if mode is protect
         self.protect_adapter: Optional[ProtectAdapter] = None
+        self.decoy_monitor = None
         if self.config.mode == "protect":
             safety_dir = os.path.join(os.path.dirname(self.root_path), f".safety_{self.config.id}")
             self.protect_adapter = ProtectAdapter(
@@ -73,6 +74,66 @@ class WatchedPath:
                 control=self.control,
                 plant_decoys=self.config.decoys,
             )
+            self.decoy_monitor = self.protect_adapter.decoys
+        elif self.config.decoys:
+            from detection.decoy_monitor import DecoyMonitor
+            self.decoy_monitor = DecoyMonitor(self.root_path)
+            self.decoy_monitor.plant_decoys()
+
+        # Pre-baseline any planted decoys so they are recognized as baselined
+        if self.config.decoys and self.decoy_monitor:
+            for d_path in self.decoy_monitor.decoys:
+                rel_d = os.path.relpath(d_path, self.root_path).replace("\\", "/")
+                self._baseline_decoy(rel_d, d_path)
+
+    def _is_decoy_path(self, rel: str) -> bool:
+        base = os.path.basename(rel)
+        return base.startswith("!DECOY_") or (self.config.decoys and "DECOY" in base)
+
+    def _is_matching_decoy_marker(self, abspath: str) -> bool:
+        from detection.decoy_monitor import MARKER
+        try:
+            if not os.path.isfile(abspath):
+                return False
+            with open(abspath, "r", encoding="utf-8", errors="ignore") as f:
+                header = f.read(512)
+                return MARKER in header
+        except OSError:
+            return False
+
+    def _is_own_decoy_planting_event(self, event: FileEvent, abspath: str, rel: str) -> bool:
+        """Check if an event matches Sentinel's own decoy planting action."""
+        if not self._is_decoy_path(rel):
+            return False
+
+        if event.event_type not in ("created", "modified"):
+            return False
+
+        base_entry = self.baseline_store.get_entry(self.config.id, rel)
+        if base_entry is not None:
+            try:
+                curr_hash = hash_file_capped(abspath, self.global_config.defaults.max_hash_bytes)
+                if curr_hash == base_entry.sha256:
+                    return True
+            except OSError:
+                pass
+            return False
+
+        return self._is_matching_decoy_marker(abspath)
+
+    def _baseline_decoy(self, rel: str, abspath: str) -> None:
+        """Auto-baseline a planted decoy file so future changes are tracked against clean canary content."""
+        if not os.path.isfile(abspath):
+            return
+        entry = inspect_file(
+            self.config.id,
+            self.root_path,
+            rel,
+            self.global_config.defaults.max_hash_bytes,
+            self.config.capture_content,
+        )
+        if entry:
+            self.baseline_store.set_entry(entry)
 
     def start(self) -> None:
         if not os.path.isdir(self.root_path):
@@ -103,14 +164,21 @@ class WatchedPath:
         if self.control.is_paused():
             return
 
-        # If protect mode, feed event directly into behavioral pipeline immediately
-        if self.protect_adapter:
-            self.protect_adapter.process_event(event)
-
         target_path = event.dest_path if (event.event_type == "moved" and event.dest_path) else event.path
         rel = os.path.relpath(target_path, self.root_path).replace("\\", "/")
         if rel.startswith(".."):
             return
+
+        abspath = os.path.join(self.root_path, rel)
+
+        # Ignore Sentinel's own decoy planting actions
+        if self._is_own_decoy_planting_event(event, abspath, rel):
+            self._baseline_decoy(rel, abspath)
+            return
+
+        # If protect mode, feed event directly into behavioral pipeline immediately
+        if self.protect_adapter:
+            self.protect_adapter.process_event(event)
 
         # Check excludes
         for pat in self.config.exclude:
@@ -190,6 +258,11 @@ class WatchedPath:
         if not change:
             return
 
+        # Ignore Sentinel's own decoy creation changes
+        if self._is_decoy_path(rel) and "created" in change.kinds and self._is_matching_decoy_marker(abspath):
+            self._baseline_decoy(rel, abspath)
+            return
+
         # Deduplication check: if hash matches last reported, skip (G3)
         curr_hash = change.new.sha256 if change.new else ""
         if "modified" in change.kinds and curr_hash and self._last_reported_hashes.get(rel) == curr_hash:
@@ -219,7 +292,8 @@ class WatchedPath:
             if self.protect_adapter.speed.get_score(actor_key, event.timestamp):
                 signals.append("SPEED")
         elif self.config.decoys and "DECOY" in os.path.basename(rel):
-            signals.append("DECOY")
+            if any(k in change.kinds for k in ("modified", "deleted", "permissions", "owner")):
+                signals.append("DECOY")
 
         final_sev = escalate_with_signals(base_sev, signals)
 
