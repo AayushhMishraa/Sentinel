@@ -178,40 +178,44 @@ function showToast(severity, message, duration) {
   }, duration || 4000);
 }
 
+function triggerBounce(el) {
+  if (!el) return;
+  el.classList.remove('bounce');
+  void el.offsetWidth; // Force browser reflow to restart CSS keyframe animation
+  el.classList.add('bounce');
+  setTimeout(() => {
+    el.classList.remove('bounce');
+  }, 1000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const metaEl = document.getElementById('latest-alert-meta');
   if (!metaEl) return;
 
-  const currentMaxId = parseInt(metaEl.dataset.maxId || '0', 10);
-  const newestSev = (metaEl.dataset.newestSeverity || 'medium').toLowerCase();
-  const openCount = parseInt(metaEl.dataset.openCount || '0', 10);
+  let currentMaxId = parseInt(metaEl.dataset.maxId || '0', 10);
+  let currentOpenCount = parseInt(metaEl.dataset.openCount || '0', 10);
 
   // 1. Dynamic Tab Title
-  if (openCount > 0) {
-    document.title = `(${openCount}) Alerts - Sentinel`;
+  if (currentOpenCount > 0) {
+    document.title = `(${currentOpenCount}) Alerts - Sentinel`;
   } else {
     document.title = 'Sentinel';
   }
 
-  // 2. Counter Animation on change
-  const prevOpenCountStr = sessionStorage.getItem('sentinel_prev_open_count');
+  // 2. Initial page load check: if previous count was lower, trigger bounce
   const countEl = document.getElementById('open-alerts-count');
-  if (prevOpenCountStr !== null) {
-    const prevOpenCount = parseInt(prevOpenCountStr, 10);
-    if (countEl && openCount !== prevOpenCount) {
-      countEl.classList.add('bounce');
-      setTimeout(() => countEl.classList.remove('bounce'), 800);
+  const prevOpenStr = sessionStorage.getItem('sentinel_prev_open_count');
+  if (prevOpenStr !== null) {
+    const prevOpen = parseInt(prevOpenStr, 10);
+    if (currentOpenCount > prevOpen) {
+      triggerBounce(countEl);
     }
   }
-  sessionStorage.setItem('sentinel_prev_open_count', openCount.toString());
+  sessionStorage.setItem('sentinel_prev_open_count', currentOpenCount.toString());
 
-  // 3. Toast Notifications (Rate limited to max 1 per 5 seconds)
-  const lastSeenIdStr = sessionStorage.getItem('sentinel_last_seen_id');
-  const lastToastTime = parseInt(sessionStorage.getItem('sentinel_last_toast_time') || '0', 10);
-  const now = Date.now();
-
-  // Restore active toast if persisting across reload
+  // 3. Restore any active toast persisting across reload
   const activeToastJson = sessionStorage.getItem('sentinel_active_toast');
+  const now = Date.now();
   if (activeToastJson) {
     try {
       const activeToast = JSON.parse(activeToastJson);
@@ -225,31 +229,86 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  if (lastSeenIdStr === null) {
-    // Initial page visit: seed with currentMaxId so existing alerts don't spam
+  if (sessionStorage.getItem('sentinel_last_seen_id') === null) {
     sessionStorage.setItem('sentinel_last_seen_id', currentMaxId.toString());
-  } else {
-    const lastSeenId = parseInt(lastSeenIdStr, 10);
-    if (currentMaxId > lastSeenId) {
-      sessionStorage.setItem('sentinel_last_seen_id', currentMaxId.toString());
-      if (now - lastToastTime >= 5000) {
-        const msg = `New [${newestSev.toUpperCase()}] Alert: File modified.`;
+  }
+
+  function checkToast(newMaxId, newestSev) {
+    const lastSeenId = parseInt(sessionStorage.getItem('sentinel_last_seen_id') || '0', 10);
+    const lastToastTime = parseInt(sessionStorage.getItem('sentinel_last_toast_time') || '0', 10);
+    const curNow = Date.now();
+
+    if (newMaxId > lastSeenId) {
+      sessionStorage.setItem('sentinel_last_seen_id', newMaxId.toString());
+      if (curNow - lastToastTime >= 5000) {
+        const msg = `New [${(newestSev || 'MEDIUM').toUpperCase()}] Alert: File modified.`;
         const duration = 4000;
-        sessionStorage.setItem('sentinel_last_toast_time', now.toString());
+        sessionStorage.setItem('sentinel_last_toast_time', curNow.toString());
         sessionStorage.setItem('sentinel_active_toast', JSON.stringify({
           severity: newestSev,
           message: msg,
-          expires: now + duration
+          expires: curNow + duration
         }));
         showToast(newestSev, msg, duration);
       }
     }
   }
-});
 
-// Auto-poll feed every 2 seconds
-setTimeout(() => {
-  window.location.reload();
-}, 2000);
+  // 4. Live 2-second Auto-poll comparing old total_open with new total_open
+  setInterval(async () => {
+    try {
+      const res = await fetch(window.location.href);
+      if (!res.ok) return;
+      const text = await res.text();
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+
+      const newMeta = doc.getElementById('latest-alert-meta');
+      if (!newMeta) return;
+
+      const newOpenCount = parseInt(newMeta.dataset.openCount || '0', 10);
+      const newMaxId = parseInt(newMeta.dataset.maxId || '0', 10);
+      const newestSev = newMeta.dataset.newestSeverity || 'medium';
+
+      const liveCountEl = document.getElementById('open-alerts-count');
+
+      // If open alerts count increased, trigger scale bounce
+      if (newOpenCount > currentOpenCount) {
+        if (liveCountEl) {
+          liveCountEl.textContent = newOpenCount;
+          triggerBounce(liveCountEl);
+        }
+      } else if (liveCountEl && newOpenCount !== currentOpenCount) {
+        liveCountEl.textContent = newOpenCount;
+      }
+
+      // Update Tab Title
+      if (newOpenCount > 0) {
+        document.title = `(${newOpenCount}) Alerts - Sentinel`;
+      } else {
+        document.title = 'Sentinel';
+      }
+
+      // Check Toast notification
+      checkToast(newMaxId, newestSev);
+
+      // If counts or alert IDs changed, update main content seamlessly
+      if (newOpenCount !== currentOpenCount || newMaxId !== currentMaxId) {
+        const currentMain = document.querySelector('main');
+        const newMain = doc.querySelector('main');
+        if (currentMain && newMain) {
+          currentMain.innerHTML = newMain.innerHTML;
+          if (newOpenCount > currentOpenCount) {
+            triggerBounce(document.getElementById('open-alerts-count'));
+          }
+        }
+        currentOpenCount = newOpenCount;
+        currentMaxId = newMaxId;
+        sessionStorage.setItem('sentinel_prev_open_count', currentOpenCount.toString());
+      }
+    } catch (e) {
+      window.location.reload();
+    }
+  }, 2000);
+});
 </script>
 {% endblock %}
