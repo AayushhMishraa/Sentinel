@@ -150,6 +150,18 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
             repo.resolve_alert(alert_id, action, actor=actor, note=note)
         return redirect(url_for("alert_detail", alert_id=alert_id))
 
+    @app.route("/alerts/bulk-acknowledge", methods=["POST"])
+    def bulk_acknowledge_route():
+        actor = request.form.get("actor", "dashboard-admin")
+        note = request.form.get("note", "Bulk acknowledged")
+        action = request.form.get("action", "reject")
+        engine = app.config.get("ENGINE")
+        if engine and hasattr(engine, "bulk_reject_alerts"):
+            engine.bulk_reject_alerts(actor=actor, note=note)
+        else:
+            repo.bulk_resolve_alerts(action=action, actor=actor, note=note)
+        return redirect(url_for("index"))
+
     @app.route("/report")
     def report_view():
         days = request.args.get("days", 30, type=int)

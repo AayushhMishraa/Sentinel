@@ -50,6 +50,13 @@ class Repository(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def bulk_resolve_alerts(
+        self, action: str = "reject", actor: str = "dashboard-admin", note: str = "Bulk acknowledged"
+    ) -> int:
+        """Resolve all open alerts in bulk with an audit trail entry."""
+        pass
+
+    @abc.abstractmethod
     def record_host(self, host_id: str, name: str, token_hash: str = "", agent_version: str = "0.1.0") -> None:
         """Register or heartbeat a host."""
         pass
@@ -276,11 +283,11 @@ class SQLiteRepository(Repository):
         return results
 
     def resolve_alert(self, alert_id: int, action: str, actor: str, note: str = "") -> bool:
-        if action not in ("approve", "reject"):
+        if action not in ("approve", "reject", "acknowledge"):
             raise ValueError(f"Invalid resolution action: {action}")
         now = time.time()
         res_dict = {"actor": actor, "at": now, "note": note}
-        new_status = "approved" if action == "approve" else "rejected"
+        new_status = "approved" if action == "approve" else ("acknowledged" if action == "acknowledge" else "rejected")
 
         with self._get_connection() as conn:
             cur = conn.execute("""
@@ -297,3 +304,29 @@ class SQLiteRepository(Repository):
             """, (alert_id, action, actor, now, note))
             conn.commit()
             return True
+
+    def bulk_resolve_alerts(
+        self, action: str = "reject", actor: str = "dashboard-admin", note: str = "Bulk acknowledged"
+    ) -> int:
+        if action not in ("approve", "reject", "acknowledge"):
+            raise ValueError(f"Invalid resolution action: {action}")
+        now = time.time()
+        res_dict = {"actor": actor, "at": now, "note": note}
+        new_status = "approved" if action == "approve" else ("acknowledged" if action == "acknowledge" else "rejected")
+
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT id FROM alerts WHERE status = 'open'").fetchall()
+            if not rows:
+                return 0
+            conn.execute(
+                "UPDATE alerts SET status = ?, resolution = ? WHERE status = 'open'",
+                (new_status, json.dumps(res_dict))
+            )
+            for r in rows:
+                conn.execute(
+                    "INSERT INTO approvals (alert_id, action, actor, ts, note) VALUES (?, ?, ?, ?, ?)",
+                    (r["id"], action, actor, now, note)
+                )
+            conn.commit()
+            return len(rows)
+

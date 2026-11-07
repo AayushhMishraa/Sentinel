@@ -12,6 +12,7 @@ It REFUSES to run anywhere except a marked sandbox (see _sandbox_guard.py).
 """
 import argparse
 import os
+import signal
 import sys
 import time
 
@@ -21,6 +22,24 @@ sys.path.insert(0, HERE)
 
 import config                      # noqa: E402
 import _sandbox_guard as guard     # noqa: E402
+
+
+def detach_stdin_and_ignore_signals():
+    """Detach simulator from stdin and ignore terminal suspension signals (SIGTSTP, SIGTTIN, SIGTTOU)."""
+    for sig_name in ("SIGTSTP", "SIGTTIN", "SIGTTOU"):
+        sig = getattr(signal, sig_name, None)
+        if sig is not None:
+            try:
+                signal.signal(sig, signal.SIG_IGN)
+            except (ValueError, OSError):
+                pass
+
+    try:
+        devnull = open(os.devnull, "r")
+        os.dup2(devnull.fileno(), sys.stdin.fileno())
+        sys.stdin = devnull
+    except (OSError, AttributeError):
+        pass
 
 
 def parse_args(argv=None):
@@ -44,6 +63,7 @@ def overwrite_with_noise(path, hold):
 
 
 def main(argv=None):
+    detach_stdin_and_ignore_signals()
     args = parse_args(argv)
     if args.interval <= 0:
         print("--interval must be above 0")

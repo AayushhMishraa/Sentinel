@@ -130,6 +130,18 @@ def get_alert_detail(alert_id: int):
     return jsonify({"ok": True, "alert": alert.to_dict()})
 
 
+@api_v1.route("/alerts/bulk-acknowledge", methods=["POST"])
+@require_token
+def api_bulk_acknowledge():
+    data = request.get_json(silent=True) or {}
+    actor = data.get("actor", "api-admin")
+    note = data.get("note", "Bulk acknowledged")
+    action = data.get("action", "reject")
+    repo = get_repo()
+    count = repo.bulk_resolve_alerts(action=action, actor=actor, note=note)
+    return jsonify({"ok": True, "acknowledged": count})
+
+
 @api_v1.route("/commands", methods=["GET"])
 @require_token
 def get_commands():
@@ -149,3 +161,4 @@ def get_commands():
             for row in cur.fetchall():
                 commands.append(dict(row))
     return jsonify({"ok": True, "commands": commands})
+

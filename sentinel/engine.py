@@ -445,6 +445,16 @@ class SentinelEngine:
             return True
         return False
 
+    def bulk_reject_alerts(self, actor: str = "dashboard-admin", note: str = "Bulk acknowledged") -> int:
+        """Bulk reject/acknowledge all currently open alerts without deleting history."""
+        if isinstance(self.sink, LocalSink):
+            return self.sink.repo.bulk_resolve_alerts(action="reject", actor=actor, note=note)
+        return 0
+
+    def bulk_acknowledge_alerts(self, actor: str = "dashboard-admin", note: str = "Bulk acknowledged") -> int:
+        """Alias for bulk_reject_alerts."""
+        return self.bulk_reject_alerts(actor=actor, note=note)
+
     def start(self) -> None:
         self._running = True
         self._heartbeat_stop.clear()

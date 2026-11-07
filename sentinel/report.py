@@ -14,7 +14,7 @@ def generate_compliance_report_html(repo: Repository, days: int = 30) -> str:
     alerts = [a for a in repo.list_alerts() if a.last_seen >= cutoff]
 
     approved = [a for a in alerts if a.status == "approved"]
-    rejected = [a for a in alerts if a.status == "rejected"]
+    rejected = [a for a in alerts if a.status in ("rejected", "acknowledged")]
     open_alerts = [a for a in alerts if a.status == "open"]
 
     rows_html = []

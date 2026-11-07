@@ -81,8 +81,17 @@
 </section>
 
 <section class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-    <h2>Live Threat &amp; Integrity Alerts</h2>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <h2>Live Threat &amp; Integrity Alerts</h2>
+      <form action="{{ url_for('bulk_acknowledge_route') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Acknowledge and mark all {{ stats.total_open }} open alert(s) as resolved?');">
+        <input type="hidden" name="actor" value="dashboard-admin">
+        <input type="hidden" name="note" value="Bulk acknowledged">
+        <button type="submit" id="bulk-ack-btn" {% if stats.total_open == 0 %}disabled style="opacity: 0.4; cursor: not-allowed; background: rgba(255, 136, 0, 0.08); color: #ffaa33; border: 1px solid rgba(255, 136, 0, 0.2); padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;"{% else %}style="background: rgba(255, 136, 0, 0.15); color: #ffaa33; border: 1px solid rgba(255, 136, 0, 0.4); padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;"{% endif %}>
+          &#10003; Bulk Acknowledge{% if stats.total_open > 0 %} ({{ stats.total_open }}){% endif %}
+        </button>
+      </form>
+    </div>
     <span class="muted" style="font-size: 12px; white-space: nowrap;">Auto-refreshing every 2s</span>
   </div>
   {% if not alerts %}
