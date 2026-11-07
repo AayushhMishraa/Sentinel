@@ -53,10 +53,12 @@ def parse_args(argv=None):
 
 
 def overwrite_with_noise(path, hold):
-    """Overwrite a file in place with random bytes of the same size; keep it open for `hold` s."""
+    """Overwrite a file in place with random bytes (at least 8 KB so entropy checker fires); keep it open for `hold` s."""
     with open(path, "r+b") as f:
         size = os.fstat(f.fileno()).st_size
-        f.write(os.urandom(size))
+        write_size = max(size, 8192)
+        f.seek(0)
+        f.write(os.urandom(write_size))
         f.flush()
         if hold > 0:
             time.sleep(hold)         # long enough for Rewind to see who has the file open

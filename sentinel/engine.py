@@ -56,6 +56,7 @@ class WatchedPath:
         # Debouncing per relative path: {relpath: (last_event_time, events_list, initial_mode)}
         self._debounce_lock = threading.Lock()
         self._pending_events: Dict[str, Tuple[float, List[FileEvent], Optional[int]]] = {}
+        self._pending_signals: Dict[str, Set[str]] = {}
         self._stop_event = threading.Event()
         self._debounce_thread: Optional[threading.Thread] = None
 
@@ -188,7 +189,12 @@ class WatchedPath:
 
         # If protect mode, feed event directly into behavioral pipeline immediately
         if self.protect_adapter:
-            self.protect_adapter.process_event(event)
+            verdict = self.protect_adapter.process_event(event)
+            if verdict and verdict.signals:
+                with self._debounce_lock:
+                    if rel not in self._pending_signals:
+                        self._pending_signals[rel] = set()
+                    self._pending_signals[rel].update(verdict.signals)
 
         # Check excludes
         for pat in self.config.exclude:
@@ -225,16 +231,17 @@ class WatchedPath:
     def _debounce_worker(self) -> None:
         while not self._stop_event.is_set():
             now = time.time()
-            ready: List[Tuple[str, List[FileEvent], Optional[int]]] = []
+            ready: List[Tuple[str, List[FileEvent], Optional[int], Set[str]]] = []
 
             with self._debounce_lock:
                 for rel, (last_ts, ev_list, init_mode) in list(self._pending_events.items()):
                     if now - last_ts >= DEBOUNCE_QUIET_SECONDS:
-                        ready.append((rel, ev_list, init_mode))
+                        sigs = self._pending_signals.pop(rel, set())
+                        ready.append((rel, ev_list, init_mode, sigs))
                         del self._pending_events[rel]
 
-            for rel, ev_list, init_mode in ready:
-                self._process_debounced_event(rel, ev_list, init_mode)
+            for rel, ev_list, init_mode, sigs in ready:
+                self._process_debounced_event(rel, ev_list, init_mode, inherited_signals=sigs)
 
             time.sleep(0.1)
 
@@ -243,6 +250,7 @@ class WatchedPath:
         rel: str,
         events: Union[FileEvent, List[FileEvent]],
         initial_mode: Optional[int] = None,
+        inherited_signals: Optional[Union[List[str], Set[str]]] = None,
     ) -> None:
         if isinstance(events, list):
             ev_list = events
@@ -291,7 +299,7 @@ class WatchedPath:
         )
 
         # Signals (behavioral layer escalation)
-        signals: List[str] = []
+        signals: List[str] = list(inherited_signals or [])
         if self.protect_adapter:
             for ev in ev_list:
                 if self.protect_adapter.decoys.was_decoy_touched(ev):
@@ -301,10 +309,17 @@ class WatchedPath:
             self.protect_adapter.speed.record_event(actor_key, abspath, event.timestamp)
             if self.protect_adapter.speed.get_score(actor_key, event.timestamp):
                 signals.append("SPEED")
+            if hasattr(self.protect_adapter, "tracker"):
+                now_ts = event.timestamp or time.time()
+                if self.protect_adapter.tracker.slow_burn(now_ts):
+                    signals.append("SLOW_SUSPICION")
+                if hasattr(self.protect_adapter.tracker, "is_sustained") and self.protect_adapter.tracker.is_sustained(actor_key, now_ts):
+                    signals.append("SUSTAINED")
         elif self.config.decoys and "DECOY" in os.path.basename(rel):
             if any(k in change.kinds for k in ("modified", "deleted", "permissions", "owner")):
                 signals.append("DECOY")
 
+        signals = sorted(list(set(signals)))
         final_sev = escalate_with_signals(base_sev, signals)
 
         # PID attribution (G6)

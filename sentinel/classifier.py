@@ -194,8 +194,13 @@ def classify_file_change(
         kinds.append("owner")
 
     if not kinds:
-        # Only mtime or atime changed, content and permissions identical
-        return None
+        # If modification events were captured before protect mode auto-restore reverted
+        # the file back to baseline, record modified so behavioral alerts are preserved
+        if events and any(ev.event_type in ("modified", "created") for ev in events):
+            kinds.append("modified")
+        else:
+            # Only mtime or atime changed, content and permissions identical
+            return None
 
     diff_text = None
     diff_truncated = False
