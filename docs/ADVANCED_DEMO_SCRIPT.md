@@ -118,38 +118,42 @@ Proves Sentinel's distributed architecture (Rule S-1). Sentinel is not just a lo
 ### Step 1: Query Live Alerts via REST API
 In Terminal 2:
 ```bash
-curl -s http://127.0.0.1:5000/api/v1/alerts | jq '.[0]'
+curl -s http://127.0.0.1:5000/api/v1/alerts | python3 -m json.tool
 ```
+*(Tip: If you only want to inspect the first alert, run: `curl -s http://127.0.0.1:5000/api/v1/alerts | python3 -c "import sys, json; data=json.load(sys.stdin); print(json.dumps(data[0] if data else {}, indent=2))"`)*
+
 **Expected Terminal Output:**
-A clean JSON structure representing the latest alert:
+A clean JSON structure representing the alerts:
 ```json
-{
-  "id": 1,
-  "host_id": "LAPTOP-HEO2HM0R",
-  "root_id": "sandbox",
-  "path": "/home/aayush/rewind_project/protected_folder/...",
-  "severity": "critical",
-  "status": "open",
-  "signals": ["DECOY"],
-  "kinds": ["modified"],
-  "summary": "File modified: ...",
-  "diff": "..."
-}
+[
+  {
+    "id": 1,
+    "host_id": "LAPTOP-HEO2HM0R",
+    "root_id": "sandbox",
+    "path": "/home/aayush/rewind_project/protected_folder/!DECOY_001.txt",
+    "severity": "critical",
+    "status": "open",
+    "signals": ["DECOY"],
+    "kinds": ["modified"],
+    "summary": "File modified: !DECOY_001.txt by PID 12345",
+    "diff": "..."
+  }
+]
 ```
-**What this means:** Third-party SIEMs (Splunk, Datadog, ELK) or automated orchestration webhooks can query Sentinel programmatically.
+**What this means:** Third-party SIEMs (Splunk, Datadog, ELK) or automated orchestration webhooks can query Sentinel programmatically without external dependencies.
 
 ### Step 2: Register a Remote Cloud Agent via API Heartbeat
 Simulate a secondary cloud server (e.g., `aws-prod-web-02`) checking in from an AWS VPC:
 ```bash
 curl -s -X POST http://127.0.0.1:5000/api/v1/heartbeat \
   -H "Content-Type: application/json" \
-  -d '{"host_id": "aws-prod-web-02", "name": "ip-10-0-1-42", "agent_version": "0.1.0"}' | jq .
+  -d '{"host_id": "aws-prod-web-02", "name": "ip-10-0-1-42", "agent_version": "0.1.0"}' | python3 -m json.tool
 ```
 **Expected Terminal Output:**
 ```json
 {
-  "ok": true,
-  "ts": 1794056000.123
+    "ok": true,
+    "ts": 1794056000.123
 }
 ```
 **What this means:** The central server authenticated the agent and updated its heartbeat registry.
