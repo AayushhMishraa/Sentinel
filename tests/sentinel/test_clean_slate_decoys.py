@@ -135,3 +135,44 @@ def test_recreate_folder_clean_slate_reinit(tmp_path):
     # Verify dashboard stays at 0 Open Alerts
     open_alerts = [a for a in repo.list_alerts() if a.status == "open"]
     assert len(open_alerts) == 0, f"Expected 0 open alerts on reset, found: {[a.summary for a in open_alerts]}"
+
+
+def test_multi_folder_old_modified_decoys_reinit_no_false_alarms(tmp_path):
+    """Regression: 12 old modified decoy files across multiple folders do not false alarm on startup after init_baseline."""
+    folder_a = tmp_path / "sandbox"
+    folder_b = tmp_path / "web"
+    folder_c = tmp_path / "docs"
+
+    for f in (folder_a, folder_b, folder_c):
+        f.mkdir()
+        (f / ".REWIND_SANDBOX").write_text("ok")
+        # Pre-seed old modified/scrambled decoy files from past attacks (12 decoys total)
+        for i in range(1, 5):
+            (f / f"!DECOY_{i:03d}.txt").write_text(f"corrupted_ransomware_payload_{i}\n")
+
+    cfg_dict = {
+        "host_id": "multi-decoy-box",
+        "paths": [
+            {"id": "sandbox", "path": str(folder_a), "mode": "protect", "decoys": True},
+            {"id": "web", "path": str(folder_b), "mode": "monitor", "decoys": True},
+            {"id": "docs", "path": str(folder_c), "mode": "protect", "decoys": True},
+        ],
+    }
+
+    cfg = load_settings_dict(cfg_dict)
+    store = BaselineStore(str(tmp_path / "baseline.db"))
+    repo = SQLiteRepository(str(tmp_path / "repo.db"))
+    sink = LocalSink(repo)
+
+    # 1. Re-init baseline: engine cleanly replants all 12 decoys with clean canary text
+    engine = SentinelEngine(config=cfg, baseline_store=store, sink=sink)
+    engine.init_baseline()
+
+    # 2. Start engine: file watcher must NOT trigger false alarms for any of the 12 decoys
+    engine.start()
+    time.sleep(2.0)
+    engine.stop()
+
+    open_alerts = [a for a in repo.list_alerts() if a.status == "open"]
+    assert len(open_alerts) == 0, f"Expected 0 false alarm alerts on startup, got {len(open_alerts)}: {[a.summary for a in open_alerts]}"
+

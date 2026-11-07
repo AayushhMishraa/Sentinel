@@ -101,14 +101,13 @@ class WatchedPath:
         base = os.path.basename(rel)
         return base.startswith("!DECOY_") or (self.config.decoys and "DECOY" in base)
 
-    def _is_matching_decoy_marker(self, abspath: str) -> bool:
-        from detection.decoy_monitor import MARKER
+    def _is_clean_decoy(self, abspath: str) -> bool:
+        """Check if file matches clean canary decoy hash."""
         try:
             if not os.path.isfile(abspath):
                 return False
-            with open(abspath, "r", encoding="utf-8", errors="ignore") as f:
-                header = f.read(512)
-                return MARKER in header
+            curr_h = hash_file_capped(abspath, self.global_config.defaults.max_hash_bytes)
+            return curr_h == "dcf738290fd5a1bf663c2fb27adbdb60cc4d41c2eccf80d7ad4832e082561852"
         except OSError:
             return False
 
@@ -120,6 +119,10 @@ class WatchedPath:
         if event.event_type not in ("created", "modified"):
             return False
 
+        # Any file matching clean canary hash is Sentinel's own bait
+        if self._is_clean_decoy(abspath):
+            return True
+
         base_entry = self.baseline_store.get_entry(self.config.id, rel)
         if base_entry is not None:
             try:
@@ -128,9 +131,8 @@ class WatchedPath:
                     return True
             except OSError:
                 pass
-            return False
 
-        return self._is_matching_decoy_marker(abspath)
+        return False
 
     def _baseline_decoy(self, rel: str, abspath: str) -> None:
         """Auto-baseline a planted decoy file so future changes are tracked against clean canary content."""
@@ -149,6 +151,18 @@ class WatchedPath:
     def start(self) -> None:
         if not os.path.isdir(self.root_path):
             os.makedirs(self.root_path, exist_ok=True)
+
+        # Cleanly replant and baseline decoys before watcher starts so old modified decoys never false-alarm
+        if self.config.decoys and self.decoy_monitor:
+            self.decoy_monitor.plant_decoys()
+            for d_path in self.decoy_monitor.decoys:
+                rel_d = os.path.relpath(d_path, self.root_path).replace("\\", "/")
+                self._baseline_decoy(rel_d, d_path)
+                try:
+                    curr_h = hash_file_capped(d_path, self.global_config.defaults.max_hash_bytes)
+                    self._last_reported_hashes[rel_d] = curr_h
+                except OSError:
+                    pass
 
         self._stop_event.clear()
         self._debounce_thread = threading.Thread(
@@ -276,8 +290,8 @@ class WatchedPath:
         if not change:
             return
 
-        # Ignore Sentinel's own decoy creation changes
-        if self._is_decoy_path(rel) and "created" in change.kinds and self._is_matching_decoy_marker(abspath):
+        # Ignore Sentinel's own clean decoy files (whether created or replanted)
+        if self._is_decoy_path(rel) and self._is_clean_decoy(abspath):
             self._baseline_decoy(rel, abspath)
             return
 
@@ -392,6 +406,12 @@ class SentinelEngine:
         """Scan and populate baseline for all configured paths."""
         counts = {}
         for p_cfg in self.config.paths:
+            # Cleanly replant clean decoys before scanning baseline so baseline never captures corrupted bait
+            if p_cfg.decoys:
+                from detection.decoy_monitor import DecoyMonitor
+                dm = DecoyMonitor(p_cfg.resolved_path)
+                dm.plant_decoys()
+
             cnt = scan_and_save_baseline(
                 store=self.baseline_store,
                 root_id=p_cfg.id,
