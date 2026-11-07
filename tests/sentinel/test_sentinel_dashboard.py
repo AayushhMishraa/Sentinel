@@ -101,9 +101,14 @@ def test_dynamic_tab_title_and_components(dashboard_client):
     assert "@keyframes bounce-anim" in html
     assert "1.5s ease-in-out" in html
     assert "scale(1.6)" in html
-    assert "offsetWidth" in html
+    assert "offsetHeight" in html
     assert "newCount > oldCount" in html
     assert "previousOpenCount" in html
+    assert "el.textContent = newCount" in html
+    assert "el.style.animation = 'none'" in html
+    assert "el.style.animation = 'bounce-anim 1.5s ease-in-out'" in html
+    assert "main.innerHTML" not in html
+    assert 'id="alerts-feed-section"' in html
 
     # 2. Add 2 more open alerts (total 3) -> title should become '(3) Alerts - Sentinel'
     for i in (2, 3):

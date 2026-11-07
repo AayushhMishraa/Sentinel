@@ -14,23 +14,23 @@
   </div>
   <div class="stat-box">
     <div class="muted">CRITICAL</div>
-    <div class="stat-val" style="color: #ff4444;">{{ stats.critical }}</div>
+    <div id="stat-critical" class="stat-val" style="color: #ff4444;">{{ stats.critical }}</div>
   </div>
   <div class="stat-box">
     <div class="muted">HIGH</div>
-    <div class="stat-val" style="color: #ff8800;">{{ stats.high }}</div>
+    <div id="stat-high" class="stat-val" style="color: #ff8800;">{{ stats.high }}</div>
   </div>
   <div class="stat-box">
     <div class="muted">MEDIUM</div>
-    <div class="stat-val" style="color: #ffcc00;">{{ stats.medium }}</div>
+    <div id="stat-medium" class="stat-val" style="color: #ffcc00;">{{ stats.medium }}</div>
   </div>
   <div class="stat-box">
     <div class="muted">LOW</div>
-    <div class="stat-val" style="color: #33b5e5;">{{ stats.low }}</div>
+    <div id="stat-low" class="stat-val" style="color: #33b5e5;">{{ stats.low }}</div>
   </div>
   <div class="stat-box">
     <div class="muted">INFO</div>
-    <div class="stat-val" style="color: #aaaaaa;">{{ stats.info }}</div>
+    <div id="stat-info" class="stat-val" style="color: #aaaaaa;">{{ stats.info }}</div>
   </div>
 </section>
 
@@ -86,7 +86,7 @@
   </div>
 </section>
 
-<section class="card">
+<section id="alerts-feed-section" class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
     <div style="display: flex; align-items: center; gap: 16px;">
       <h2>Live Threat &amp; Integrity Alerts</h2>
@@ -195,15 +195,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.title = 'Sentinel';
   }
 
-  // 2. Initial page load check: if previous count in session was lower, trigger bounce-anim
+  // 2. Initial page load check: if previous count in session was lower, trigger animation
   const countEl = document.getElementById('open-alerts-count');
   const prevOpenStr = sessionStorage.getItem('sentinel_prev_open_count');
   if (prevOpenStr !== null) {
     const prevOpen = parseInt(prevOpenStr, 10);
     if (previousOpenCount > prevOpen && countEl) {
-      countEl.classList.remove('bounce-anim');
-      void countEl.offsetWidth;
-      countEl.classList.add('bounce-anim');
+      countEl.style.animation = 'none';
+      void countEl.offsetHeight;
+      countEl.style.animation = 'bounce-anim 1.5s ease-in-out';
     }
   }
   sessionStorage.setItem('sentinel_prev_open_count', previousOpenCount.toString());
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 4. Live 2-second Auto-poll using global previousOpenCount and bounce-anim
+  // 4. Live 2-second Auto-poll updating textContent without replacing the DOM node
   setInterval(async () => {
     try {
       const res = await fetch(window.location.href);
@@ -275,24 +275,32 @@ document.addEventListener('DOMContentLoaded', () => {
       // Check Toast notification
       checkToast(newMaxId, newestSev);
 
-      // If count or latest alert changed, seamlessly update page content
-      if (newCount !== oldCount || newMaxId !== currentMaxId) {
-        const currentMain = document.querySelector('main');
-        const newMain = doc.querySelector('main');
-        if (currentMain && newMain) {
-          currentMain.innerHTML = newMain.innerHTML;
+      // Only update textContent of #open-alerts-count (do not replace the DOM node)
+      const el = document.getElementById('open-alerts-count');
+      if (el) {
+        el.textContent = newCount;
+        if (newCount > oldCount) {
+          el.style.animation = 'none';
+          void el.offsetHeight;
+          el.style.animation = 'bounce-anim 1.5s ease-in-out';
         }
-        currentMaxId = newMaxId;
       }
 
-      // When newCount > oldCount, trigger reliable bounce animation
-      if (newCount > oldCount) {
-        const el = document.getElementById('open-alerts-count');
-        if (el) {
-          el.classList.remove('bounce-anim');
-          void el.offsetWidth;
-          el.classList.add('bounce-anim');
+      // Update other stat numbers in place
+      ['critical', 'high', 'medium', 'low', 'info'].forEach(k => {
+        const sCur = document.getElementById(`stat-${k}`);
+        const sNew = doc.getElementById(`stat-${k}`);
+        if (sCur && sNew) sCur.textContent = sNew.textContent;
+      });
+
+      // Update alerts feed section only if alerts or counts changed
+      if (newCount !== oldCount || newMaxId !== currentMaxId) {
+        const currentFeed = document.getElementById('alerts-feed-section');
+        const newFeed = doc.getElementById('alerts-feed-section');
+        if (currentFeed && newFeed) {
+          currentFeed.innerHTML = newFeed.innerHTML;
         }
+        currentMaxId = newMaxId;
       }
 
       // Store previous count in global variable
