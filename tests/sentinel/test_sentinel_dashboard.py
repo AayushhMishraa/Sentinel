@@ -97,9 +97,11 @@ def test_dynamic_tab_title_and_components(dashboard_client):
     assert 'id="open-alerts-count"' in html
     assert 'id="latest-alert-meta"' in html
     assert "showToast" in html
-    assert "triggerBounce" in html
+    assert "bounce-anim" in html
+    assert "@keyframes bounce-anim" in html
     assert "offsetWidth" in html
-    assert "newOpenCount > currentOpenCount" in html
+    assert "newCount > oldCount" in html
+    assert "previousOpenCount" in html
 
     # 2. Add 2 more open alerts (total 3) -> title should become '(3) Alerts - Sentinel'
     for i in (2, 3):
