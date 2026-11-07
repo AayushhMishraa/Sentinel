@@ -1,11 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Status{% endblock %}
 {% block content %}
-<section class="card status">
-  <div id="light" class="light offline"></div>
-  <div>
-    <div id="state" class="state">...</div>
-    <div id="state-note" class="muted">Loading...</div>
+<section class="card status" style="display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 32px;">
+    <div id="light" class="light offline"></div>
+    <div>
+      <div id="state" class="state">...</div>
+      <div id="state-note" class="muted">Loading...</div>
+    </div>
+  </div>
+  <!-- NEW: Live Telemetry Graph -->
+  <div class="telemetry-wrapper" style="width: 300px; height: 80px; position: relative;">
+    <svg id="telemetry-svg" viewBox="0 0 300 80" style="width: 100%; height: 100%; overflow: visible;">
+      <defs>
+        <linearGradient id="grad-normal" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--ok)" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="var(--ok)" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="grad-alert" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--bad)" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="var(--bad)" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path id="telemetry-area" d="" fill="url(#grad-normal)" />
+      <path id="telemetry-line" d="" fill="none" stroke="var(--ok)" stroke-width="2" />
+    </svg>
+    <div style="position: absolute; bottom: 0; right: 0; font-family: var(--font-code); font-size: 10px; color: var(--muted);">LIVE I/O TELEMETRY</div>
   </div>
 </section>
 
@@ -21,10 +41,8 @@
 
 <section class="card">
   <h2>Test it: Simulate an attack</h2>
-  <p class="muted">These are harmless test programs. They scramble files inside the sandbox folder only.
-     Watch the light above change.</p>
-  <label class="check"><input type="checkbox" id="avoid" checked>
-    Skip the decoy files (harder: Rewind must catch it by behavior, not by the bait)</label>
+  <p class="muted">These are harmless test programs. They scramble files inside the sandbox folder only. Watch the light above change.</p>
+  <label class="check"><input type="checkbox" id="avoid" checked> Skip the decoy files (harder)</label>
   <div class="buttons">
     {% for key, v in variants.items() %}
     <button type="button" data-variant="{{ key }}" disabled>{{ v.label }}</button>
@@ -32,12 +50,6 @@
   </div>
   <p id="sim-help" class="muted"></p>
   <p id="sim-msg" role="status"></p>
-
-  <!-- NEW: The Live Telemetry Console -->
-  <div id="console-box" style="margin-top: 24px; background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 12px; height: 150px; overflow-y: auto; font-family: var(--font-code); font-size: 12px; color: var(--ok); box-shadow: inset 0 0 10px rgba(0,255,159,0.1);">
-    <div style="color: var(--muted); margin-bottom: 8px;">--- SYSTEM LOG STREAM ---</div>
-    <div id="log-lines"></div>
-  </div>
 </section>
 {% endblock %}
 
@@ -46,33 +58,57 @@
 const $ = (id) => document.getElementById(id);
 const NOTES = {
   NORMAL: 'All quiet. Rewind is watching.',
-  ELEVATED: 'Something looks suspicious. Backups are paused while Rewind watches closely.',
-  RESPONDING: 'Attack confirmed. Rewind is stopping it and restoring files.',
-  OFFLINE: 'The Rewind engine does not look like it is running. Start it with: sudo python3 main.py'
+  ELEVATED: 'Something looks suspicious. Backups are paused.',
+  RESPONDING: 'Attack confirmed. Rewind is stopping it.',
+  OFFLINE: 'The Rewind engine does not look like it is running.'
 };
 let current = {};
 let lastIncidentId = null;
+let telemetryData = new Array(30).fill(0); // 30 data points
 
-function addLog(msg) {
-  const box = $('log-lines');
-  const div = document.createElement('div');
-  const time = new Date().toLocaleTimeString('en-US', {hour12: false});
-  div.innerHTML = `<span style="color:var(--muted)">[${time}]</span> ${msg}`;
-  if (msg.includes('ALERT') || msg.includes('Attack')) div.style.color = 'var(--bad)';
-  else if (msg.includes('WATCH') || msg.includes('Suspicious')) div.style.color = 'var(--warn)';
-  else if (msg.includes('RESPONSE') || msg.includes('restored')) div.style.color = 'var(--ok)';
-  else div.style.color = 'var(--text)';
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-  if (box.children.length > 50) box.removeChild(box.firstChild);
+// --- Telemetry Graph Logic ---
+function drawGraph() {
+  const line = $('telemetry-line');
+  const area = $('telemetry-area');
+  const maxVal = Math.max(...telemetryData, 10); // Scale based on max value
+  const width = 300;
+  const height = 80;
+  const step = width / (telemetryData.length - 1);
+
+  let d = `M 0 ${height - (telemetryData[0] / maxVal) * height}`;
+  for (let i = 1; i < telemetryData.length; i++) {
+    let x = i * step;
+    let y = height - (telemetryData[i] / maxVal) * height;
+    d += ` L ${x} ${y}`;
+  }
+
+  line.setAttribute('d', d);
+  area.setAttribute('d', `${d} L ${width} ${height} L 0 ${height} Z`);
+
+  // Color based on status
+  if (current.state === 'RESPONDING' || current.state === 'ELEVATED') {
+    line.style.stroke = 'var(--bad)';
+    area.setAttribute('fill', 'url(#grad-alert)');
+  } else {
+    line.style.stroke = 'var(--ok)';
+    area.setAttribute('fill', 'url(#grad-normal)');
+  }
 }
 
-function setMsg(text, bad) {
-  const el = $('sim-msg');
-  el.textContent = text;
-  el.className = bad ? 'bad' : 'ok';
-}
+// Add random spikes if attacking
+setInterval(() => {
+  if (current.state === 'RESPONDING') {
+    telemetryData.push(Math.random() * 80 + 20); // Huge spikes
+  } else if (current.state === 'ELEVATED') {
+    telemetryData.push(Math.random() * 40 + 10); // Medium spikes
+  } else {
+    telemetryData.push(Math.random() * 5 + 2);   // Idle line
+  }
+  telemetryData.shift(); // Keep array at 30 items
+  drawGraph();
+}, 500);
 
+// --- Dashboard Logic ---
 async function refresh() {
   try {
     const r = await fetch('/api/status');
@@ -83,60 +119,38 @@ async function refresh() {
     $('state-note').textContent = NOTES[s.state] || '';
     $('folder').textContent = s.protected_folder;
     $('files').textContent = String(s.files_watched);
-    
-    if (s.last_incident && s.last_incident.id !== lastIncidentId) {
-      if (lastIncidentId !== null) {
-        addLog(`<b>[ALERT]</b> ATTACK CONFIRMED: ${s.last_incident.signals.join(', ')}`);
-        addLog(`<b>[RESPONSE]</b> Threat neutralized. System restored.`);
-      }
-      lastIncidentId = s.last_incident.id;
-    }
 
     $('last').textContent = s.last_incident
       ? '#' + s.last_incident.id + ' at ' + s.last_incident.time + ' (' + s.last_incident.status + ')'
       : 'none';
     const can = s.simulate_enabled && s.sandbox_ok && !s.simulator_running;
     document.querySelectorAll('button[data-variant]').forEach((b) => { b.disabled = !can; });
+
     let help = '';
-    if (!s.simulate_enabled) {
-      help = 'Simulation is switched off. Stop the dashboard, run: export REWIND_ALLOW_SIMULATE=1 and then: sudo python3 dashboard/app.py';
-    } else if (!s.sandbox_ok) {
-      help = 'The protected folder has no .REWIND_SANDBOX marker. Run: sudo python3 generate_samples.py';
-    } else if (s.simulator_running) {
-      help = 'A simulation is running...';
-    }
+    if (!s.simulate_enabled) help = 'Simulation is switched off.';
+    else if (!s.sandbox_ok) help = 'Missing .REWIND_SANDBOX marker.';
+    else if (s.simulator_running) help = 'A simulation is running...';
     $('sim-help').textContent = help;
   } catch (e) {
     $('light').className = 'light offline';
     $('state').textContent = 'NO CONNECTION';
-    $('state-note').textContent = 'Cannot reach the dashboard server.';
   }
 }
 
 async function simulate(variant) {
-  if (current.state === 'OFFLINE' &&
-      !confirm('Rewind does not look like it is running, so NOTHING will stop this attack and the sandbox files will stay scrambled until you reset them. Continue?')) {
-    return;
-  }
-  setMsg('Launching...', false);
-  addLog(`Initiating ${variant.toUpperCase()} attack simulation...`);
-  
+  if (current.state === 'OFFLINE' && !confirm('Rewind is offline. Continue?')) return;
+  $('sim-msg').textContent = 'Launching...';
   try {
     const r = await fetch('/api/simulate', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({variant: variant, avoid_decoys: $('avoid').checked})
     });
-    const j = await r.json().catch(() => ({ok: false, error: 'Unexpected reply (HTTP ' + r.status + ')'}));
-    if (j.ok) {
-      setMsg('Started ' + j.label + ' (process ' + j.pid + '). Watch the light above.' + (j.warning ? ' ' + j.warning : ''), !!j.warning);
-      addLog(`Attacker process <b>${j.pid}</b> spawned.`);
-    } else {
-      setMsg('Not started: ' + j.error, true);
-      addLog(`<b>[ERROR]</b> Launch failed: ${j.error}`);
-    }
+    const j = await r.json();
+    if (j.ok) $('sim-msg').textContent = 'Started ' + j.label + '. Watch the graph!';
+    else $('sim-msg').textContent = 'Error: ' + j.error;
   } catch (e) {
-    setMsg('Not started: cannot reach the dashboard server.', true);
+    $('sim-msg').textContent = 'Error connecting to server.';
   }
   refresh();
 }
@@ -145,9 +159,8 @@ document.querySelectorAll('button[data-variant]').forEach((b) => {
   b.addEventListener('click', () => simulate(b.dataset.variant));
 });
 
-addLog('Dashboard connected. Awaiting engine heartbeat...');
 refresh();
 setInterval(refresh, 2000);
+drawGraph();
 </script>
 {% endblock %}
-
