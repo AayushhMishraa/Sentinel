@@ -49,6 +49,7 @@ class Change:
     new: Optional[Meta] = None
     diff: Optional[str] = None
     diff_truncated: bool = False
+    signals: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -57,6 +58,7 @@ class Change:
             "new": self.new.to_dict() if self.new else None,
             "diff": self.diff,
             "diff_truncated": self.diff_truncated,
+            "signals": list(self.signals),
         }
 
     @classmethod
@@ -67,6 +69,7 @@ class Change:
             new=Meta.from_dict(d.get("new")),
             diff=d.get("diff"),
             diff_truncated=bool(d.get("diff_truncated", False)),
+            signals=list(d.get("signals", [])),
         )
 
 
@@ -150,3 +153,4 @@ class Alert:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+

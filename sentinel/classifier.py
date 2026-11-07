@@ -71,11 +71,13 @@ def classify_file_change(
     capture_content: bool = False,
     initial_mode: Optional[int] = None,
     events: Optional[List[FileEvent]] = None,
+    signals: Optional[List[str]] = None,
 ) -> Optional[Change]:
     """Compare real file at root_path/relpath against baseline_entry.
 
     Returns Change object, or None if no material change occurred (e.g. mtime touch only).
     """
+    file_signals: List[str] = list(signals or [])
     norm_rel = relpath.replace("\\", "/").strip("/")
     abspath = os.path.join(root_path, norm_rel)
 
@@ -108,6 +110,7 @@ def classify_file_change(
             new=None,
             diff=diff_text,
             diff_truncated=diff_truncated,
+            signals=list(file_signals),
         )
 
     # 2. File exists now
@@ -166,6 +169,7 @@ def classify_file_change(
             new=new_meta,
             diff=diff_text,
             diff_truncated=diff_truncated,
+            signals=list(file_signals),
         )
 
     # 4. File in baseline: compare attributes
@@ -202,6 +206,12 @@ def classify_file_change(
             # Only mtime or atime changed, content and permissions identical
             return None
 
+    # Detect high entropy change if modified
+    if "modified" in kinds or (current_entry.sha256 != baseline_entry.sha256):
+        if current_entry.size >= 8192 and baseline_entry.entropy < 7.0 and current_entry.entropy >= 7.5:
+            if "ENTROPY" not in file_signals:
+                file_signals.append("ENTROPY")
+
     diff_text = None
     diff_truncated = False
     if "modified" in kinds:
@@ -219,5 +229,6 @@ def classify_file_change(
         new=new_meta,
         diff=diff_text,
         diff_truncated=diff_truncated,
+        signals=list(file_signals),
     )
 

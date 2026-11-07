@@ -182,6 +182,8 @@ class SQLiteRepository(Repository):
                 existing_kinds.update(envelope.change.kinds)
                 existing_signals = set(json.loads(existing["signals"]))
                 existing_signals.update(envelope.signals)
+                if envelope.change and hasattr(envelope.change, "signals") and envelope.change.signals:
+                    existing_signals.update(envelope.change.signals)
 
                 conn.execute("""
                     UPDATE alerts
@@ -197,6 +199,10 @@ class SQLiteRepository(Repository):
                     alert_id,
                 ))
             else:
+                combined_signals = set(envelope.signals)
+                if envelope.change and hasattr(envelope.change, "signals") and envelope.change.signals:
+                    combined_signals.update(envelope.change.signals)
+
                 cur = conn.execute("""
                     INSERT INTO alerts
                     (host_id, root_id, path, severity, status, first_seen, last_seen, count, kinds, signals, summary, resolution)
@@ -209,7 +215,7 @@ class SQLiteRepository(Repository):
                     envelope.ts,
                     envelope.ts,
                     json.dumps(sorted(envelope.change.kinds)),
-                    json.dumps(sorted(envelope.signals)),
+                    json.dumps(sorted(combined_signals)),
                     envelope.summary,
                 ))
                 alert_id = cur.lastrowid

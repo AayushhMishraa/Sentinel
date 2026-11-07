@@ -210,20 +210,27 @@ class WatchedPath:
 
         # If protect mode, feed event directly into behavioral pipeline immediately
         if self.protect_adapter:
-            if not event.pid or event.pid <= 0:
+            norm_event = FileEvent(
+                path=abspath,
+                event_type=event.event_type,
+                timestamp=event.timestamp or time.time(),
+                pid=event.pid,
+                dest_path=event.dest_path,
+            )
+            if not norm_event.pid or norm_event.pid <= 0:
                 try:
                     detected_pid = get_process_touching_file(abspath)
                     if detected_pid and detected_pid > 0:
-                        event = FileEvent(
-                            path=event.path,
-                            action=event.action,
-                            timestamp=event.timestamp,
+                        norm_event = FileEvent(
+                            path=norm_event.path,
+                            event_type=norm_event.event_type,
+                            timestamp=norm_event.timestamp,
                             pid=detected_pid,
-                            cookie=event.cookie,
+                            dest_path=norm_event.dest_path,
                         )
                 except Exception:
                     pass
-            verdict = self.protect_adapter.process_event(event)
+            verdict = self.protect_adapter.process_event(norm_event)
             if verdict and verdict.signals:
                 with self._debounce_lock:
                     if rel not in self._pending_signals:
@@ -296,6 +303,8 @@ class WatchedPath:
         abspath = os.path.join(self.root_path, rel)
         base_entry = self.baseline_store.get_entry(self.config.id, rel)
 
+        inherited = list(inherited_signals or [])
+
         change = classify_file_change(
             root_id=self.config.id,
             root_path=self.root_path,
@@ -305,6 +314,7 @@ class WatchedPath:
             capture_content=self.config.capture_content,
             initial_mode=initial_mode,
             events=ev_list,
+            signals=inherited,
         )
 
         if not change:
@@ -333,7 +343,12 @@ class WatchedPath:
         )
 
         # Signals (behavioral layer escalation)
-        signals: List[str] = list(inherited_signals or [])
+        signals: List[str] = list(inherited)
+        if change and hasattr(change, "signals") and change.signals:
+            for s in change.signals:
+                if s not in signals:
+                    signals.append(s)
+
         if self.protect_adapter:
             for ev in ev_list:
                 if self.protect_adapter.decoys.was_decoy_touched(ev):
@@ -347,13 +362,21 @@ class WatchedPath:
                 now_ts = event.timestamp or time.time()
                 if self.protect_adapter.tracker.slow_burn(now_ts):
                     signals.append("SLOW_SUSPICION")
-                if hasattr(self.protect_adapter.tracker, "is_sustained") and self.protect_adapter.tracker.is_sustained(actor_key, now_ts):
-                    signals.append("SUSTAINED")
+                if hasattr(self.protect_adapter.tracker, "is_sustained"):
+                    if (
+                        self.protect_adapter.tracker.is_sustained(actor_key, now_ts)
+                        or (event.pid and self.protect_adapter.tracker.is_sustained(event.pid, now_ts))
+                        or self.protect_adapter.tracker.is_sustained(None, now_ts)
+                    ):
+                        signals.append("SUSTAINED")
         elif self.config.decoys and "DECOY" in os.path.basename(rel):
             if any(k in change.kinds for k in ("modified", "deleted", "permissions", "owner")):
                 signals.append("DECOY")
 
         signals = sorted(list(set(signals)))
+        if change:
+            change.signals = list(signals)
+
         final_sev = escalate_with_signals(base_sev, signals)
 
         # PID attribution (G6)

@@ -83,9 +83,79 @@ def test_slow_3s_triggers_exactly_one_critical_slow_suspicion_alert(tmp_path):
 
     crit_alert = slow_suspicion_alerts[0]
     assert crit_alert.severity == "critical", f"Expected severity 'critical' for SLOW_SUSPICION, got {crit_alert.severity}"
-    assert "ENTROPY" in crit_alert.signals or "SLOW_SUSPICION" in crit_alert.signals
+    assert "ENTROPY" in crit_alert.signals, f"Expected ENTROPY in signals, got {crit_alert.signals}"
+    assert "SLOW_SUSPICION" in crit_alert.signals, f"Expected SLOW_SUSPICION in signals, got {crit_alert.signals}"
 
     # Earlier modified files (documents 0 and 1) should be MEDIUM severity
     medium_alerts = [a for a in all_alerts if a.severity == "medium"]
     assert len(medium_alerts) >= 2, f"Expected at least 2 medium alerts before slow-burn escalation, got {len(medium_alerts)}"
+
+
+def test_sustained_signal_passed_to_envelope(tmp_path):
+    """Proves that SUSTAINED signal from behavioral verdict is preserved and passed through to envelope and alert."""
+    from core.events import FileEvent
+    from sentinel.classifier import classify_file_change
+    from sentinel.models import EventEnvelope
+
+    watch_dir = tmp_path / "protected_folder"
+    watch_dir.mkdir()
+    doc_path = watch_dir / "sustained_test.txt"
+    doc_path.write_text("initial baseline content for sustained testing\n")
+
+    cfg_dict = {
+        "host_id": "test-sustained-box",
+        "paths": [
+            {
+                "id": "protected_sandbox",
+                "path": str(watch_dir),
+                "mode": "protect",
+                "decoys": False,
+            }
+        ],
+    }
+
+    cfg = load_settings_dict(cfg_dict)
+    store = BaselineStore(str(tmp_path / "baseline.db"))
+    repo = SQLiteRepository(str(tmp_path / "repo.db"))
+    sink = LocalSink(repo)
+
+    engine = SentinelEngine(config=cfg, baseline_store=store, sink=sink)
+    engine.init_baseline()
+
+    # Modify file
+    doc_path.write_text("updated modified content with low noise\n")
+
+    base_entry = store.get_entry("protected_sandbox", "sustained_test.txt")
+    ev = FileEvent(path=str(doc_path), event_type="modified", timestamp=time.time(), pid=12345)
+
+    # 1. Verify classify_file_change merges and does not overwrite SUSTAINED signal
+    change = classify_file_change(
+        root_id="protected_sandbox",
+        root_path=str(watch_dir),
+        relpath="sustained_test.txt",
+        baseline_entry=base_entry,
+        events=[ev],
+        signals=["SUSTAINED"],
+    )
+    assert change is not None
+    assert "SUSTAINED" in change.signals
+
+    # 2. Verify debounced processing passes SUSTAINED through to envelope and repo alert
+    wp = engine.watched_paths["protected_sandbox"]
+    wp._process_debounced_event("sustained_test.txt", [ev], inherited_signals={"SUSTAINED"})
+
+    alerts = repo.list_alerts()
+    assert len(alerts) == 1
+    alert = alerts[0]
+    assert "SUSTAINED" in alert.signals
+    assert alert.severity in ("high", "critical")
+
+    # Verify change stored in repo changes table also has SUSTAINED in envelope signals
+    with repo._get_connection() as conn:
+        row = conn.execute("SELECT json FROM changes WHERE alert_id = ?", (alert.id,)).fetchone()
+        assert row is not None
+        import json
+        change_json = json.loads(row["json"])
+        assert "SUSTAINED" in change_json.get("signals", [])
+        assert "SUSTAINED" in change_json.get("change", {}).get("signals", [])
 
