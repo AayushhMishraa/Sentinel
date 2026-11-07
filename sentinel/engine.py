@@ -193,7 +193,7 @@ class WatchedPath:
             self._debounce_thread.join(timeout=2.0)
 
     def _on_fs_event(self, event: FileEvent) -> None:
-        if self.control.is_paused():
+        if self.control.should_drop(event.timestamp):
             return
 
         target_path = event.dest_path if (event.event_type == "moved" and event.dest_path) else event.path
