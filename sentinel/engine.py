@@ -106,7 +106,7 @@ class WatchedPath:
         try:
             if not os.path.isfile(abspath):
                 return False
-            curr_h = hash_file_capped(abspath, self.global_config.defaults.max_hash_bytes)
+            curr_h, _ = hash_file_capped(abspath, self.global_config.defaults.max_hash_bytes)
             return curr_h == "dcf738290fd5a1bf663c2fb27adbdb60cc4d41c2eccf80d7ad4832e082561852"
         except OSError:
             return False
@@ -126,7 +126,7 @@ class WatchedPath:
         base_entry = self.baseline_store.get_entry(self.config.id, rel)
         if base_entry is not None:
             try:
-                curr_hash = hash_file_capped(abspath, self.global_config.defaults.max_hash_bytes)
+                curr_hash, _ = hash_file_capped(abspath, self.global_config.defaults.max_hash_bytes)
                 if curr_hash == base_entry.sha256:
                     return True
             except OSError:
@@ -166,7 +166,7 @@ class WatchedPath:
                 rel_d = os.path.relpath(d_path, self.root_path).replace("\\", "/")
                 self._baseline_decoy(rel_d, d_path)
                 try:
-                    curr_h = hash_file_capped(d_path, self.global_config.defaults.max_hash_bytes)
+                    curr_h, _ = hash_file_capped(d_path, self.global_config.defaults.max_hash_bytes)
                     self._last_reported_hashes[rel_d] = curr_h
                 except OSError:
                     pass
@@ -193,7 +193,7 @@ class WatchedPath:
             self._debounce_thread.join(timeout=2.0)
 
     def _on_fs_event(self, event: FileEvent) -> None:
-        if self.control.is_paused():
+        if self.control.should_drop(event.timestamp):
             return
 
         target_path = event.dest_path if (event.event_type == "moved" and event.dest_path) else event.path
