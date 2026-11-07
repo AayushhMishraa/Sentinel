@@ -99,6 +99,8 @@ def test_dynamic_tab_title_and_components(dashboard_client):
     assert "showToast" in html
     assert "bounce-anim" in html
     assert "@keyframes bounce-anim" in html
+    assert "1.5s ease-in-out" in html
+    assert "scale(1.6)" in html
     assert "offsetWidth" in html
     assert "newCount > oldCount" in html
     assert "previousOpenCount" in html

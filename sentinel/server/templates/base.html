@@ -32,11 +32,12 @@ main { max-width: 1400px; margin: 40px auto; padding: 0 24px; }
 .stat-val { display: inline-block; font-size: 26px; font-weight: 700; margin-top: 4px; transform-origin: center center; color: #fff; }
 @keyframes bounce-anim {
   0% { transform: scale(1); }
-  50% { transform: scale(1.4); color: var(--warn); }
+  35% { transform: scale(1.6); color: var(--warn); }
+  65% { transform: scale(1.6); color: var(--warn); }
   100% { transform: scale(1); }
 }
 .bounce-anim {
-  animation: bounce-anim 0.5s ease-out;
+  animation: bounce-anim 1.5s ease-in-out;
   display: inline-block;
 }
 .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 12px; }
