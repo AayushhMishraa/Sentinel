@@ -7,6 +7,7 @@ Storage sits behind a Repository interface (SQLite now, PostgreSQL later).
 from __future__ import annotations
 
 import abc
+import contextlib
 import json
 import os
 import sqlite3
@@ -73,10 +74,15 @@ class SQLiteRepository(Repository):
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
 
-    def _get_connection(self) -> sqlite3.Connection:
+    @contextlib.contextmanager
+    def _get_connection(self):
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
-        return conn
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def _init_db(self) -> None:
         with self._get_connection() as conn:
