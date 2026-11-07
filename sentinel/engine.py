@@ -66,7 +66,17 @@ class WatchedPath:
         self.protect_adapter: Optional[ProtectAdapter] = None
         self.decoy_monitor = None
         if self.config.mode == "protect":
-            safety_dir = os.path.join(os.path.dirname(self.root_path), f".safety_{self.config.id}")
+            parent = os.path.dirname(self.root_path)
+            safety_dir = os.path.join(parent, f".safety_{self.config.id}")
+            try:
+                os.makedirs(safety_dir, exist_ok=True)
+            except OSError:
+                proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                safety_dir = os.path.join(proj_root, f".safety_{self.config.id}")
+                try:
+                    os.makedirs(safety_dir, exist_ok=True)
+                except OSError:
+                    safety_dir = f"/tmp/.safety_{self.config.id}"
             self.protect_adapter = ProtectAdapter(
                 root_id=self.config.id,
                 path=self.root_path,

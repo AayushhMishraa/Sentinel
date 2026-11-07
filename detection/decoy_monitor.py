@@ -34,6 +34,14 @@ class DecoyMonitor:
 
         Returns the sorted list of absolute decoy paths.
         """
+        if not os.path.isdir(self.directory):
+            try:
+                os.makedirs(self.directory, exist_ok=True)
+            except OSError:
+                return []
+        if not os.path.isdir(self.directory):
+            return []
+
         targets = [(self.directory, root_count)]
         for entry in sorted(os.scandir(self.directory), key=lambda e: e.name):
             if entry.is_dir(follow_symlinks=False) and not entry.name.startswith("."):
