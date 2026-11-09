@@ -150,7 +150,7 @@
 {% block scripts %}
 <script>
 // Global variable tracking previous open alerts count for reliable bounce animation
-let previousOpenCount = {{ stats.total_open }};
+let previousOpenCount = parseInt('{{ stats.total_open }}', 10) || 0;
 
 function showToast(severity, message, duration) {
   const container = document.getElementById('toast-container');
