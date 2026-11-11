@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}UI Kit · Design System{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-subtle); padding-bottom: 16px;">
+  <div>
+    <h1 style="font-size: 22px; font-weight: 700; margin: 0 0 6px 0; color: var(--text-primary); letter-spacing: -0.01em;">Design System &amp; Semantic Token Kit</h1>
+    <p style="margin: 0; font-size: 13px; color: var(--text-muted);">High-density 2026 SaaS design tokens tested across Dark, Light, and Demo Contrast themes.</p>
+  </div>
+  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-faint);">
+    TAILWIND v4.3.5 · VENDORED &bull; WCAG 2.1 AA
+  </div>
+</div>
+
+<!-- 1. Theme Switcher & Mode Showcase -->
+<section class="card" style="padding: 20px; margin-bottom: 24px;">
+  <h2 style="font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 16px 0;">Theme Engine Switcher</h2>
+  <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+    <button type="button" class="theme-btn" onclick="setSentinelTheme('dark')" style="padding: 8px 16px; border: 1px solid var(--border-subtle); font-size: 12px;">Activate Dark Theme (Default)</button>
+    <button type="button" class="theme-btn" onclick="setSentinelTheme('light')" style="padding: 8px 16px; border: 1px solid var(--border-subtle); font-size: 12px;">Activate Light Theme</button>
+    <button type="button" class="theme-btn" onclick="setSentinelTheme('contrast')" style="padding: 8px 16px; border: 1px solid var(--border-subtle); font-size: 12px;">Activate Projector Contrast Mode</button>
+  </div>
+</section>
+
+<!-- 2. Surface Hierarchy & Depth -->
+<section style="margin-bottom: 32px;">
+  <h2 style="font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 16px 0;">Surface Hierarchy (Layered Alpha Depth)</h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+    <div style="background: var(--surface-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px;">
+      <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">--surface-bg</div>
+      <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 4px;">Canvas Base</div>
+    </div>
+    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; box-shadow: var(--card-highlight);">
+      <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">--surface-card</div>
+      <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 4px;">Card Level 1 (Top Rim)</div>
+    </div>
+    <div style="background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px;">
+      <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">--surface-raised</div>
+      <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 4px;">Raised Level 2</div>
+    </div>
+    <div style="background: var(--surface-hover); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px;">
+      <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">--surface-hover</div>
+      <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 4px;">Hover State</div>
+    </div>
+    <div style="background: var(--surface-selected); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 16px;">
+      <div style="font-weight: 600; font-size: 13px; color: var(--accent);">--surface-selected</div>
+      <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 4px;">Selected Row / Active</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Severity Rails & Status Dots (Restraint Rule) -->
+<section style="margin-bottom: 32px;">
+  <h2 style="font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 16px 0;">Severity Rails &amp; Restrained Indicators</h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+    
+    <!-- Critical with Pulsing Dot -->
+    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-left: 4px solid var(--sev-critical); border-radius: var(--radius-md); padding: 12px; display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: var(--sev-critical); letter-spacing: 0.05em;">CRITICAL</div>
+        <div style="font-size: 12px; color: var(--text-muted);">Decoy / Ransomware</div>
+      </div>
+      <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--sev-critical); box-shadow: 0 0 8px var(--sev-critical); animation: pulse 1.8s infinite;"></span>
+    </div>
+
+    <!-- High -->
+    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-left: 4px solid var(--sev-high); border-radius: var(--radius-md); padding: 12px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--sev-high); letter-spacing: 0.05em;">HIGH</div>
+      <div style="font-size: 12px; color: var(--text-muted);">Speed Burst / SUID</div>
+    </div>
+
+    <!-- Medium -->
+    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-left: 4px solid var(--sev-medium); border-radius: var(--radius-md); padding: 12px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--sev-medium); letter-spacing: 0.05em;">MEDIUM</div>
+      <div style="font-size: 12px; color: var(--text-muted);">File Modified</div>
+    </div>
+
+    <!-- Low -->
+    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-left: 4px solid var(--sev-low); border-radius: var(--radius-md); padding: 12px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--sev-low); letter-spacing: 0.05em;">LOW</div>
+      <div style="font-size: 12px; color: var(--text-muted);">Attribute / Metadata</div>
+    </div>
+
+    <!-- Info -->
+    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-left: 4px solid var(--sev-info); border-radius: var(--radius-md); padding: 12px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--sev-info); letter-spacing: 0.05em;">INFO</div>
+      <div style="font-size: 12px; color: var(--text-muted);">New File Observed</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- 4. Typography & Tabular Numerals -->
+<section class="card" style="padding: 20px; margin-bottom: 32px;">
+  <h2 style="font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 16px 0;">Typography Hierarchy &amp; Tabular Alignment</h2>
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+      <span style="font-size: 14px; color: var(--text-primary);">Primary Sans Interface Text (Inter)</span>
+      <span style="font-family: var(--font-sans); font-size: 13px; color: var(--text-muted);">The quick brown fox jumps over the lazy dog</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+      <span style="font-size: 14px; color: var(--text-primary);">Monospace Paths &amp; Hashes (JetBrains Mono)</span>
+      <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">/home/aayush/rewind_project/protected_folder/!DECOY_001.txt</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-size: 14px; color: var(--text-primary);">Tabular Numerals Alignment</span>
+      <span style="font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--accent);">
+        111,222,333 &bull; 888,999,000 &bull; PID 12498 &bull; 100/100 RESTORED
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- Pulse Keyframe for Live Dots -->
+<style>
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+</style>
+{% endblock %}

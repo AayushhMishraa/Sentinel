@@ -1,0 +1,242 @@
+/* ==========================================================================
+   Sentinel Semantic Design Tokens
+   Themes: Dark (default), Light, Contrast (High-Visibility Demo Mode)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Font Declarations (Self-hosted WOFF2, Latin subset, font-display: swap)
+   -------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/static/fonts/inter-latin-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/static/fonts/inter-latin-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/static/fonts/inter-latin-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/static/fonts/jetbrains-mono-latin-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/static/fonts/jetbrains-mono-latin-600.woff2') format('woff2');
+}
+
+/* --------------------------------------------------------------------------
+   Default Theme: Dark
+   -------------------------------------------------------------------------- */
+:root,
+html[data-theme="dark"] {
+  /* Surfaces */
+  --surface-bg: #0b0f14;
+  --surface-card: rgba(255, 255, 255, 0.03);
+  --surface-raised: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --surface-selected: rgba(56, 189, 248, 0.12);
+  --backdrop: rgba(11, 15, 20, 0.75);
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.20);
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* Typography */
+  --text-primary: #f1f5f9;
+  --text-muted: #9fb0c3;
+  --text-faint: #818f9f;
+
+  /* Accent & Focus */
+  --accent: #38bdf8;
+  --focus-ring: #38bdf8;
+
+  /* Status & Severity (Solid) */
+  --ok: #10b981;
+  --danger: #f43f5e;
+  --sev-critical: #f43f5e;
+  --sev-high: #fb923c;
+  --sev-medium: #facc15;
+  --sev-low: #38bdf8;
+  --sev-info: #94a3b8;
+
+  /* Status & Severity Soft (Rails / Chips / Badges) */
+  --ok-soft: rgba(16, 185, 129, 0.14);
+  --danger-soft: rgba(244, 63, 94, 0.14);
+  --sev-critical-soft: rgba(244, 63, 94, 0.16);
+  --sev-high-soft: rgba(251, 146, 60, 0.16);
+  --sev-medium-soft: rgba(250, 204, 21, 0.16);
+  --sev-low-soft: rgba(56, 189, 248, 0.16);
+  --sev-info-soft: rgba(148, 163, 184, 0.16);
+
+  /* Ambient Layer */
+  --ambient-bg: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.04) 0%, transparent 60%);
+
+  /* Legacy Compatibility Mapping */
+  --bg: var(--surface-bg);
+  --bg-card: var(--surface-card);
+  --border: var(--border-subtle);
+  --text: var(--text-primary);
+  --bad: var(--danger);
+  --warn: var(--sev-high);
+}
+
+/* --------------------------------------------------------------------------
+   Theme: Light
+   -------------------------------------------------------------------------- */
+html[data-theme="light"] {
+  /* Surfaces */
+  --surface-bg: #f8fafc;
+  --surface-card: #ffffff;
+  --surface-raised: #f1f5f9;
+  --surface-hover: #e8edf4;
+  --surface-selected: rgba(2, 132, 199, 0.12);
+  --backdrop: rgba(248, 250, 252, 0.85);
+
+  /* Borders */
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  /* Typography */
+  --text-primary: #0f172a;
+  --text-muted: #334155;
+  --text-faint: #536273;
+
+  /* Accent & Focus */
+  --accent: #0284c7;
+  --focus-ring: #0284c7;
+
+  /* Status & Severity (Solid) */
+  --ok: #047857;
+  --danger: #be123c;
+  --sev-critical: #be123c;
+  --sev-high: #c2410c;
+  --sev-medium: #a16207;
+  --sev-low: #0369a1;
+  --sev-info: #475569;
+
+  /* Status & Severity Soft */
+  --ok-soft: rgba(4, 120, 87, 0.12);
+  --danger-soft: rgba(190, 18, 60, 0.12);
+  --sev-critical-soft: rgba(190, 18, 60, 0.12);
+  --sev-high-soft: rgba(194, 65, 12, 0.12);
+  --sev-medium-soft: rgba(161, 98, 7, 0.12);
+  --sev-low-soft: rgba(3, 105, 161, 0.12);
+  --sev-info-soft: rgba(71, 85, 105, 0.12);
+
+  /* Ambient Layer */
+  --ambient-bg: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.05) 0%, transparent 60%);
+
+  /* Legacy Compatibility Mapping */
+  --bg: var(--surface-bg);
+  --bg-card: var(--surface-card);
+  --border: var(--border-subtle);
+  --text: var(--text-primary);
+  --bad: var(--danger);
+  --warn: var(--sev-high);
+}
+
+/* --------------------------------------------------------------------------
+   Theme: Contrast (Projector / Demo High-Contrast Mode)
+   -------------------------------------------------------------------------- */
+html[data-theme="contrast"] {
+  /* Surfaces - Clear card separation from deep background */
+  --surface-bg: #000000;
+  --surface-card: #121212;
+  --surface-raised: #1e1e1e;
+  --surface-hover: #292929;
+  --surface-selected: rgba(0, 229, 255, 0.22);
+  --backdrop: rgba(0, 0, 0, 0.95);
+
+  /* Borders - High contrast, non-zero opacity */
+  --border-subtle: rgba(255, 255, 255, 0.35);
+  --border-strong: rgba(255, 255, 255, 0.70);
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.40);
+
+  /* Typography - Clean white on black */
+  --text-primary: #ffffff;
+  --text-muted: #e2e8f0;
+  --text-faint: #cbd5e1;
+
+  /* Accent & Focus */
+  --accent: #00e5ff;
+  --focus-ring: #00e5ff;
+
+  /* Status & Severity (Vibrant rails/dots only) */
+  --ok: #00ff9f;
+  --danger: #ff0033;
+  --sev-critical: #ff0033;
+  --sev-high: #ff8800;
+  --sev-medium: #ffff00;
+  --sev-low: #00e5ff;
+  --sev-info: #e2e8f0;
+
+  /* Status & Severity Soft */
+  --ok-soft: rgba(0, 255, 159, 0.22);
+  --danger-soft: rgba(255, 0, 51, 0.22);
+  --sev-critical-soft: rgba(255, 0, 51, 0.24);
+  --sev-high-soft: rgba(251, 146, 60, 0.24);
+  --sev-medium-soft: rgba(255, 255, 0, 0.24);
+  --sev-low-soft: rgba(0, 229, 255, 0.24);
+  --sev-info-soft: rgba(226, 232, 240, 0.24);
+
+  /* Ambient Layer - Disabled in contrast mode for purity */
+  --ambient-bg: none;
+
+  /* Legacy Compatibility Mapping */
+  --bg: var(--surface-bg);
+  --bg-card: var(--surface-card);
+  --border: var(--border-subtle);
+  --text: var(--text-primary);
+  --bad: var(--danger);
+  --warn: var(--sev-high);
+}
+
+/* --------------------------------------------------------------------------
+   Global Layout, Motion & Typography Tokens (Shared across all themes)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Typography Families with Metric-Matched Fallbacks */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Motion Durations */
+  --dur-fast: 120ms;
+  --dur-ui: 200ms;
+  --dur-theme: 350ms;
+
+  /* Motion Easings */
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: linear(
+    0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%,
+    0.932 37.2%, 0.968 41%, 0.991 45.4%, 1.002 50.1%, 1.006 55.6%, 1 100%
+  );
+}
