@@ -94,6 +94,18 @@ html[data-theme="dark"] {
   /* Ambient Layer */
   --ambient-bg: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.04) 0%, transparent 60%);
 
+  /* Chrome (High contrast, clearly visible border) */
+  --chrome-bg: #000000;
+  --chrome-text: #ffffff;
+  --chrome-active: rgba(0, 229, 255, 0.25);
+  --chrome-border: rgba(255, 255, 255, 0.35);
+
+  /* Panels & Tables */
+  --panel-header-bg: #161616;
+  --panel-header-text: #ffffff;
+  --table-head-bg: #181818;
+  --row-zebra: rgba(255, 255, 255, 0.03);
+
   /* Legacy Compatibility Mapping */
   --bg: var(--surface-bg);
   --bg-card: var(--surface-card);
@@ -150,6 +162,18 @@ html[data-theme="light"] {
   /* Ambient Layer */
   --ambient-bg: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.05) 0%, transparent 60%);
 
+  /* Chrome (Sidebar stays dark navy in light and dark themes) */
+  --chrome-bg: #0b1120;
+  --chrome-text: #f1f5f9;
+  --chrome-active: rgba(2, 132, 199, 0.25);
+  --chrome-border: rgba(255, 255, 255, 0.10);
+
+  /* Panels & Tables */
+  --panel-header-bg: #f8fafc;
+  --panel-header-text: #334155;
+  --table-head-bg: #f1f5f9;
+  --row-zebra: rgba(0, 0, 0, 0.015);
+
   /* Legacy Compatibility Mapping */
   --bg: var(--surface-bg);
   --bg-card: var(--surface-card);
@@ -205,6 +229,18 @@ html[data-theme="contrast"] {
 
   /* Ambient Layer - Disabled in contrast mode for purity */
   --ambient-bg: none;
+
+  /* Chrome (High contrast, clearly visible border) */
+  --chrome-bg: #000000;
+  --chrome-text: #ffffff;
+  --chrome-active: rgba(0, 229, 255, 0.25);
+  --chrome-border: rgba(255, 255, 255, 0.35);
+
+  /* Panels & Tables */
+  --panel-header-bg: #161616;
+  --panel-header-text: #ffffff;
+  --table-head-bg: #181818;
+  --row-zebra: rgba(255, 255, 255, 0.03);
 
   /* Legacy Compatibility Mapping */
   --bg: var(--surface-bg);

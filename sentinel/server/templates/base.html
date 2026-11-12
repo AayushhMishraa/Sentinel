@@ -52,8 +52,8 @@
     background-color: var(--surface-bg, #0b0f14);
     background-image: var(--ambient-bg, none);
     color: var(--text-primary, #f1f5f9);
-    transition: background-color var(--dur-theme, 350ms) var(--ease-standard, ease),
-                color var(--dur-theme, 350ms) var(--ease-standard, ease);
+    font-size: 13px;
+    line-height: 1.5;
   }
 </style>
 
@@ -86,17 +86,299 @@
   }
 </style>
 
-<!-- Legacy Test Selectors & Required Layout Compatibility -->
+<!-- Layout Shell & UI Kit Component Styles -->
 <style>
-main { max-width: 1400px; margin: 40px auto; padding: 0 24px; }
+/* Enterprise Console Shell Layout */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+.app-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background-color: var(--chrome-bg, #090d16);
+  color: var(--chrome-text, #e2e8f0);
+  border-right: 1px solid var(--chrome-border, rgba(255,255,255,0.08));
+  display: flex;
+  flex-direction: column;
+  transition: width var(--dur-ui, 200ms) var(--ease-standard, ease);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 50;
+  user-select: none;
+}
+.app-sidebar.collapsed {
+  width: 64px;
+}
+.app-sidebar.collapsed .hide-collapsed {
+  display: none !important;
+}
+.app-sidebar.collapsed .sidebar-header {
+  padding: 14px 12px;
+  justify-content: center;
+}
+.app-sidebar.collapsed .nav-item {
+  padding: 10px 0;
+  justify-content: center;
+}
+.sidebar-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--chrome-border, rgba(255,255,255,0.08));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.nav-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint, #64748b);
+  padding: 0 10px 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm, 4px);
+  color: var(--chrome-text, #cbd5e1);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background var(--dur-fast, 120ms), color var(--dur-fast, 120ms);
+}
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+.nav-item.active {
+  background: var(--chrome-active, rgba(56, 189, 248, 0.14));
+  color: var(--accent, #38bdf8);
+  font-weight: 600;
+}
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--chrome-border, rgba(255,255,255,0.08));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sidebar-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* App Body & Top Bar */
+.app-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: var(--surface-bg, #0b0f14);
+}
+.app-topbar {
+  height: 48px;
+  background-color: var(--surface-card, #12161b);
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  box-shadow: var(--card-highlight);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+html[data-theme="light"] .app-topbar {
+  background-color: #ffffff;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.breadcrumb b {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-raised, rgba(255,255,255,0.04));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm, 4px);
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--dur-fast, 120ms);
+}
+.search-trigger:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.search-trigger kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+.host-selector-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm, 4px);
+  padding: 5px 10px;
+}
+.host-selector-badge b {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* User avatar */
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+/* Theme Switcher Header Controls */
+.theme-switcher {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 6px);
+  padding: 2px;
+  gap: 2px;
+}
+.theme-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--dur-fast, 120ms) ease;
+}
+.theme-btn:hover {
+  color: var(--text-primary);
+}
+.theme-btn.active {
+  background: var(--surface-hover);
+  color: var(--accent);
+}
+
+/* Standard Content Wrapper */
+main {
+  flex: 1;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Page Header component */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Common UI Components & Cards */
 .card {
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg, 10px);
+  border-radius: var(--radius-md, 6px);
   box-shadow: var(--card-highlight);
-  overflow-x: auto;
+  overflow: hidden;
 }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.card-header-bar {
+  background: var(--panel-header-bg, rgba(255, 255, 255, 0.03));
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-header-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--panel-header-text, var(--text-primary));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Badges & Chips */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: var(--radius-sm, 4px); font-size: 11px; font-weight: 700; text-transform: uppercase; font-family: var(--font-mono); }
 .badge.critical { background: var(--sev-critical-soft); color: var(--sev-critical); border: 1px solid var(--sev-critical); }
 .badge.high { background: var(--sev-high-soft); color: var(--sev-high); border: 1px solid var(--sev-high); }
 .badge.medium { background: var(--sev-medium-soft); color: var(--sev-medium); border: 1px solid var(--sev-medium); }
@@ -108,12 +390,79 @@ main { max-width: 1400px; margin: 40px auto; padding: 0 24px; }
 .badge.status-acknowledged { background: var(--sev-high-soft); color: var(--sev-high); }
 .badge.online { background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok); }
 .badge.offline { background: var(--sev-info-soft); color: var(--text-faint); border: 1px solid var(--border-strong); }
-.diff-container { background: #000; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px; font-family: var(--font-mono); font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
-.diff-line-add { color: #00ff9f; background: rgba(0,255,159,0.05); }
-.diff-line-del { color: #ff4444; background: rgba(255,68,68,0.05); }
-.diff-line-hdr { color: #33b5e5; }
+
+/* Severity Rail System */
+.sev-rail-critical { border-left: 3px solid var(--sev-critical); }
+.sev-rail-high { border-left: 3px solid var(--sev-high); }
+.sev-rail-medium { border-left: 3px solid var(--sev-medium); }
+.sev-rail-low { border-left: 3px solid var(--sev-low); }
+.sev-rail-info { border-left: 3px solid var(--sev-info); }
+
+/* Pulsing dot only for critical, disabled under prefers-reduced-motion */
+.dot-critical {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--sev-critical);
+  box-shadow: 0 0 6px var(--sev-critical);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dot-critical {
+    animation: dot-pulse 1.8s infinite;
+  }
+}
+@keyframes dot-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* Dense Sortable Tables (28-32px rows, sticky head) */
+.dense-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+.dense-table th {
+  position: sticky;
+  top: 0;
+  background: var(--table-head-bg, #0f141c);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  z-index: 10;
+}
+.dense-table td {
+  padding: 6px 12px;
+  height: 30px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+.dense-table tr:hover td {
+  background-color: var(--surface-hover);
+}
+.dense-table tr:nth-child(even) td {
+  background-color: var(--row-zebra, rgba(255,255,255,0.015));
+}
+.dense-table tr:nth-child(even):hover td {
+  background-color: var(--surface-hover);
+}
+.num-col {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+/* Stats Counter Grid & Test Animation Selectors */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.stat-box { background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg, 10px); padding: 14px; text-align: center; box-shadow: var(--card-highlight); }
+.stat-box { background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md, 6px); padding: 14px; text-align: center; box-shadow: var(--card-highlight); }
 .stat-val { display: inline-block; font-size: 26px; font-weight: 700; margin-top: 4px; transform-origin: center center; color: var(--text-primary); font-variant-numeric: tabular-nums; }
 
 /* Restrained Highlight Animation for Test Compliance */
@@ -128,11 +477,52 @@ main { max-width: 1400px; margin: 40px auto; padding: 0 24px; }
   display: inline-block;
 }
 
-.legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 12px; }
-.legend-item { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-md, 6px); padding: 10px; }
-.legend-item b { color: var(--text-primary); font-family: var(--font-mono); }
+/* Diff Viewer */
+.diff-container { background: #000; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px; font-family: var(--font-mono); font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+.diff-line-add { color: #00ff9f; background: rgba(0,255,159,0.05); }
+.diff-line-del { color: #ff4444; background: rgba(255,68,68,0.05); }
+.diff-line-hdr { color: #33b5e5; }
 
-/* Sleek Dark Mode Toast Notifications */
+/* Round Integrity Score Badge */
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-raised) 25%, var(--surface-hover) 50%, var(--surface-raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Empty state */
+.empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.empty-icon {
+  margin-bottom: 12px;
+  color: var(--text-faint);
+}
+
+/* Toast System */
 #toast-container {
   position: fixed;
   bottom: 24px;
@@ -185,64 +575,154 @@ main { max-width: 1400px; margin: 40px auto; padding: 0 24px; }
   color: var(--text-primary);
 }
 
-/* Theme Switcher Header Controls */
-.theme-switcher {
-  display: inline-flex;
-  align-items: center;
-  background: var(--surface-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md, 6px);
-  padding: 2px;
-  gap: 2px;
+/* SVG icons helper */
+.icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  vertical-align: middle;
+  stroke-width: 2;
+  stroke: currentColor;
+  fill: none;
 }
-.theme-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--dur-fast, 120ms) ease;
-}
-.theme-btn:hover {
-  color: var(--text-primary);
-}
-.theme-btn.active {
-  background: var(--surface-hover);
-  color: var(--accent);
-}
+.icon-sm { width: 14px; height: 14px; }
+.icon-lg { width: 20px; height: 20px; }
 </style>
 </head>
 <body>
-<header class="top" style="border-bottom: 1px solid var(--border-subtle); background: var(--surface-card); box-shadow: var(--card-highlight); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;">
-  <div style="display: flex; align-items: center; gap: 32px;">
-    <div class="brand" style="font-weight: 700; font-size: 16px; letter-spacing: 0.05em; color: var(--text-primary);">
-      SENTINEL <span style="font-weight: 400; font-size: 12px; color: var(--text-muted); margin-left: 8px;">File Integrity Monitor</span>
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="app-sidebar" id="app-sidebar">
+    <!-- Sidebar Header: Concept A Logo + Wordmark -->
+    <div class="sidebar-header">
+      <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Sentinel Logo Concept A" width="24" height="24" style="flex-shrink: 0;">
+      <div class="hide-collapsed" style="line-height: 1;">
+        <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="16" style="display: block;">
+        <span style="font-size: 10px; color: var(--text-faint); font-family: var(--font-mono); letter-spacing: 0.05em;">FIM CONSOLE</span>
+      </div>
     </div>
-    <nav style="display: flex; gap: 16px;">
-      <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}on{% endif %}" style="text-decoration: none; font-size: 13px; font-weight: 600; color: {% if request.endpoint == 'index' %}var(--accent){% else %}var(--text-muted){% endif %};">Alerts Feed</a>
-      <a href="{{ url_for('assets_view') }}" class="{% if request.endpoint == 'assets_view' %}on{% endif %}" style="text-decoration: none; font-size: 13px; font-weight: 600; color: {% if request.endpoint == 'assets_view' %}var(--accent){% else %}var(--text-muted){% endif %};">Monitored Assets</a>
-      <a href="{{ url_for('report_view') }}" target="_blank" style="text-decoration: none; font-size: 13px; font-weight: 600; color: var(--text-muted);">Compliance Report</a>
-      <a href="{{ url_for('ui_kit_view') }}" class="{% if request.endpoint == 'ui_kit_view' %}on{% endif %}" style="text-decoration: none; font-size: 13px; font-weight: 600; color: {% if request.endpoint == 'ui_kit_view' %}var(--accent){% else %}var(--text-muted){% endif %};">UI Kit</a>
-    </nav>
-  </div>
 
-  <div class="theme-switcher">
-    <button type="button" class="theme-btn" onclick="setSentinelTheme('dark')" id="theme-btn-dark">Dark</button>
-    <button type="button" class="theme-btn" onclick="setSentinelTheme('light')" id="theme-btn-light">Light</button>
-    <button type="button" class="theme-btn" onclick="setSentinelTheme('contrast')" id="theme-btn-contrast">Contrast</button>
-  </div>
-</header>
+    <!-- Grouped Nav with Collapsible Groups -->
+    <div class="sidebar-nav">
+      <div>
+        <div class="nav-group-title hide-collapsed">
+          <span>MONITORING</span>
+          <svg class="icon icon-sm"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-chevron-down"></use></svg>
+        </div>
+        <nav style="display: flex; flex-direction: column; gap: 2px;">
+          <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}" title="Alerts Feed">
+            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-alert-triangle"></use></svg>
+            <span class="hide-collapsed" style="flex: 1;">Alerts Feed</span>
+            {% if stats and stats.total_open > 0 %}
+            <span class="badge critical hide-collapsed" style="font-size: 10px; padding: 1px 6px;">{{ stats.total_open }}</span>
+            {% endif %}
+          </a>
+          <a href="{{ url_for('assets_view') }}" class="nav-item {% if request.endpoint == 'assets_view' %}active{% endif %}" title="Monitored Assets">
+            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-server"></use></svg>
+            <span class="hide-collapsed">Monitored Assets</span>
+          </a>
+        </nav>
+      </div>
 
-<main>
-{% block content %}{% endblock %}
-</main>
+      <div>
+        <div class="nav-group-title hide-collapsed">
+          <span>INTELLIGENCE</span>
+          <svg class="icon icon-sm"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-chevron-down"></use></svg>
+        </div>
+        <nav style="display: flex; flex-direction: column; gap: 2px;">
+          <a href="{{ url_for('report_view') }}" target="_blank" class="nav-item" title="Compliance Report">
+            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-file-text"></use></svg>
+            <span class="hide-collapsed">Compliance Report</span>
+          </a>
+          <a href="{{ url_for('ui_kit_view') }}" class="nav-item {% if request.endpoint == 'ui_kit_view' %}active{% endif %}" title="UI Kit">
+            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-shield"></use></svg>
+            <span class="hide-collapsed">UI Kit</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Sidebar Footer with Collapse/Expand Rail Toggle -->
+    <div class="sidebar-footer">
+      <span class="hide-collapsed" style="font-size: 11px; color: var(--text-faint); font-family: var(--font-mono);">v0.1.0-sec</span>
+      <button type="button" class="sidebar-toggle-btn" onclick="toggleSidebarRail()" title="Toggle sidebar rail">
+        <svg class="icon" id="sidebar-toggle-icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-chevron-right"></use></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- App Body -->
+  <div class="app-body">
+    <!-- Top Bar -->
+    <header class="app-topbar">
+      <div class="topbar-left">
+        <div class="breadcrumb">
+          <span>Sentinel</span>
+          <span>/</span>
+          <b>{% block breadcrumb %}Alerts Feed{% endblock %}</b>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Search Trigger with Ctrl+K Hint -->
+        <button type="button" class="search-trigger" id="cmd-k-trigger" onclick="alert('Command palette shortcut: Ctrl+K / Cmd+K')" title="Quick Command Palette">
+          <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-search"></use></svg>
+          <span style="font-size: 12px;">Search...</span>
+          <kbd>⌘K</kbd>
+        </button>
+
+        <!-- Host Selector -->
+        <div class="host-selector-badge" title="Filter by monitored host">
+          <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-server"></use></svg>
+          <span>Host: <b>All (5)</b></span>
+        </div>
+
+        <!-- Theme Switcher Controls -->
+        <div class="theme-switcher">
+          <button type="button" class="theme-btn" onclick="setSentinelTheme('dark')" id="theme-btn-dark">Dark</button>
+          <button type="button" class="theme-btn" onclick="setSentinelTheme('light')" id="theme-btn-light">Light</button>
+          <button type="button" class="theme-btn" onclick="setSentinelTheme('contrast')" id="theme-btn-contrast">Contrast</button>
+        </div>
+
+        <!-- User Menu Profile -->
+        <div class="user-avatar" title="Security Admin">
+          <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-user"></use></svg>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main View Content -->
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
 
 <div id="toast-container"></div>
 
 <script>
+function toggleSidebarRail() {
+  const sb = document.getElementById('app-sidebar');
+  if (sb) {
+    sb.classList.toggle('collapsed');
+    const isCollapsed = sb.classList.contains('collapsed');
+    try {
+      localStorage.setItem('sentinel_sidebar_collapsed', isCollapsed ? '1' : '0');
+    } catch(e) {}
+  }
+}
+
+// Restore sidebar state
+(function() {
+  try {
+    if (localStorage.getItem('sentinel_sidebar_collapsed') === '1') {
+      const sb = document.getElementById('app-sidebar');
+      if (sb) sb.classList.add('collapsed');
+    }
+  } catch(e) {}
+})();
+
 function setSentinelTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   document.documentElement.className = theme;

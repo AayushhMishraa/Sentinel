@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Alert #{{ alert.id }} · Sentinel{% endblock %}
+{% block breadcrumb %}Alert #{{ alert.id }} &bull; Incident Detail{% endblock %}
 {% block content %}
 <section class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">

@@ -64,7 +64,8 @@ def run_check_1_and_2_and_3(app, client):
 
         # Gather static URLs
         for m in re.finditer(r'(?:href|src)\s*=\s*["\'](/static/[^"\']+)["\']', html, re.IGNORECASE):
-            static_urls.add(m.group(1))
+            raw_url = m.group(1).split('#')[0]
+            static_urls.add(raw_url)
 
         # Check 2: check external URLs in HTML
         for m in external_url_regex.finditer(html):

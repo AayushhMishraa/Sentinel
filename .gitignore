@@ -18,6 +18,7 @@ sentinel.yaml
 *.log
 .safety_docs/
 .safety_sandbox/
+brand_src
 brand_src/
 
 # Demo Fixture Directories (recreated by demo setup workflows)
