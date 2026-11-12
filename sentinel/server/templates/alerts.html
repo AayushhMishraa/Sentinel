@@ -155,18 +155,36 @@ let previousOpenCount = parseInt('{{ stats.total_open }}', 10) || 0;
 function showToast(severity, message, duration) {
   const container = document.getElementById('toast-container');
   if (!container) return;
-  container.innerHTML = '';
+  container.textContent = '';
 
   const toast = document.createElement('div');
   const sevLower = (severity || 'info').toLowerCase();
   toast.className = `toast toast-${sevLower}`;
-  toast.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <span class="badge ${sevLower}">${severity.toUpperCase()}</span>
-      <span class="toast-msg">${message}</span>
-    </div>
-    <button class="toast-close" onclick="this.parentElement.remove(); sessionStorage.removeItem('sentinel_active_toast');">&times;</button>
-  `;
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+
+  const badge = document.createElement('span');
+  badge.className = `badge ${sevLower}`;
+  badge.textContent = (severity || 'info').toUpperCase();
+
+  const msg = document.createElement('span');
+  msg.className = 'toast-msg';
+  msg.textContent = message;
+
+  row.appendChild(badge);
+  row.appendChild(msg);
+
+  const btn = document.createElement('button');
+  btn.className = 'toast-close';
+  btn.textContent = '\u00D7';
+  btn.onclick = () => {
+    toast.remove();
+    sessionStorage.removeItem('sentinel_active_toast');
+  };
+
+  toast.appendChild(row);
+  toast.appendChild(btn);
   container.appendChild(toast);
   requestAnimationFrame(() => {
     toast.classList.add('show');
@@ -298,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentFeed = document.getElementById('alerts-feed-section');
         const newFeed = doc.getElementById('alerts-feed-section');
         if (currentFeed && newFeed) {
-          currentFeed.innerHTML = newFeed.innerHTML;
+          currentFeed.replaceWith(newFeed);
         }
         currentMaxId = newMaxId;
       }

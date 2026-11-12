@@ -40,6 +40,17 @@ def generate_compliance_report_html(repo: Repository, days: int = 30) -> str:
 <html>
 <head>
 <meta charset="utf-8">
+<script>
+(function() {{
+  try {{
+    var stored = localStorage.getItem('sentinel_theme');
+    var theme = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', theme);
+  }} catch(e) {{
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }}
+}})();
+</script>
 <title>Sentinel Compliance Report ({days} Days)</title>
 <style>
   body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; color: #111; line-height: 1.5; }}

@@ -19,3 +19,7 @@ sentinel.yaml
 .safety_docs/
 .safety_sandbox/
 brand_src/
+
+# Demo Fixture Directories (recreated by demo setup workflows)
+ssh_keys/
+web_root/
