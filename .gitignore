@@ -16,3 +16,6 @@ Thumbs.db
 sentinel.yaml
 *.db
 *.log
+.safety_docs/
+.safety_sandbox/
+brand_src/

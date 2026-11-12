@@ -128,55 +128,8 @@ def run_sim_worker(argv=None):
     return 0
 
 
-def run_supervised_cli():
-    """Spawn worker in an independent session (start_new_session=True) so terminal suspension signals (SIGSTOP/SIGTSTP) never freeze the shell."""
-    env = dict(os.environ, _RANSOMWARE_V2_WORKER="1")
-    import subprocess
-    proc = subprocess.Popen(
-        [sys.executable, os.path.abspath(__file__)] + sys.argv[1:],
-        env=env,
-        start_new_session=True,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-
-    try:
-        while True:
-            line = proc.stdout.readline() if proc.stdout else ""
-            if line:
-                sys.stdout.write(line)
-                sys.stdout.flush()
-
-            ret = proc.poll()
-            if ret is not None:
-                if proc.stdout:
-                    for rem in proc.stdout:
-                        sys.stdout.write(rem)
-                        sys.stdout.flush()
-                if ret < 0:
-                    sig = -ret
-                    if sig == signal.SIGKILL:
-                        sys.stderr.write("Killed\n")
-                    elif sig == signal.SIGTERM:
-                        sys.stderr.write("Terminated\n")
-                return 137 if ret == -signal.SIGKILL else (ret if ret >= 0 else 0)
-
-            time.sleep(0.02)
-    except (KeyboardInterrupt, SystemExit):
-        try:
-            proc.terminate()
-        except OSError:
-            pass
-        return 0
-
-
 def main(argv=None):
-    if argv is not None or os.environ.get("_RANSOMWARE_V2_WORKER") == "1":
-        return run_sim_worker(argv)
-    return run_supervised_cli()
+    return run_sim_worker(argv)
 
 
 if __name__ == "__main__":

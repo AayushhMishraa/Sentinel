@@ -97,59 +97,8 @@ def run_sim_worker(argv=None):
     return 0
 
 
-def run_supervised_cli():
-    """Spawn worker in an independent session (start_new_session=True) so terminal suspension signals (SIGSTOP/SIGTSTP) never freeze the shell."""
-    env = dict(os.environ, _SLOW_3S_WORKER="1")
-    import subprocess
-    proc = subprocess.Popen(
-        [sys.executable, os.path.abspath(__file__)] + sys.argv[1:],
-        env=env,
-        start_new_session=True,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-
-    try:
-        while True:
-            line = proc.stdout.readline() if proc.stdout else ""
-            if line:
-                sys.stdout.write(line)
-                sys.stdout.flush()
-
-            ret = proc.poll()
-            if ret is not None:
-                if proc.stdout:
-                    for rem in proc.stdout:
-                        sys.stdout.write(rem)
-                        sys.stdout.flush()
-                return ret if ret >= 0 else 0
-
-            # If the process was frozen / stopped (SIGSTOP / State: T), resume with SIGCONT so it runs to completion
-            try:
-                with open(f"/proc/{proc.pid}/status", "r") as f:
-                    for s_line in f:
-                        if s_line.startswith("State:") and "T" in s_line:
-                            proc.send_signal(signal.SIGCONT)
-                            break
-            except (OSError, IOError):
-                pass
-
-            time.sleep(0.05)
-    except (KeyboardInterrupt, SystemExit):
-        try:
-            proc.terminate()
-        except OSError:
-            pass
-        return 0
-
-
 def main(argv=None):
-    if argv is not None or os.environ.get("_SLOW_3S_WORKER") == "1":
-        return run_sim_worker(argv)
-    return run_supervised_cli()
+    return run_sim_worker(argv)
 
 
 if __name__ == "__main__":

@@ -222,7 +222,7 @@ def test_s1_live_dashboard_simulate_button_stops_a_real_attack(paths, rewind, at
     assert dash.get("/api/status").get_json()["last_incident"]["id"] == row["id"]
     assert response_finished(app), explain(paths, "the response never finished")
     page = dash.get("/incidents/%d" % row["id"])
-    assert page.status_code == 200 and "Integrity check passed" in page.get_data(as_text=True)
+    assert page.status_code == 200 and "Cryptographic SHA-256 verification successful" in page.get_data(as_text=True)
     assert files_intact(paths), explain(paths, "files were not restored 100/100")
 
 
