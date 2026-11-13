@@ -186,11 +186,11 @@ html[data-theme="light"] {
   /* Ambient Layer */
   --ambient-bg: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.05) 0%, transparent 60%);
 
-  /* Chrome (Sidebar stays navy blue so logo remains white) */
-  --chrome-bg: #090d16;
-  --chrome-text: #f1f5f9;
-  --chrome-active: rgba(56, 189, 248, 0.16);
-  --chrome-border: rgba(255, 255, 255, 0.08);
+  /* Chrome (Sidebar: follow-theme mode -> raised surface on light) */
+  --chrome-bg: var(--surface-raised);
+  --chrome-text: var(--text-primary);
+  --chrome-active: rgba(2, 132, 199, 0.12);
+  --chrome-border: var(--border-subtle);
 
   /* Panels & Tables */
   --panel-header-bg: #f8fafc;
@@ -296,6 +296,9 @@ html[data-theme="contrast"] {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
+  /* Layout Dimensions */
+  --topbar-h: 48px;
+
   /* Radii */
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -317,11 +320,12 @@ html[data-theme="contrast"] {
   --preview-dark-text: #ffffff;
   --preview-light-bg: #ffffff;
   --preview-light-text: #0b0f14;
+  --preview-contrast-bg: #000000;
+  --preview-contrast-text: #ffffff;
 }
 
-/* Sidebar Override: Navy blue container ensures white logo in all themes */
+/* Sidebar styling follows theme */
 .app-sidebar {
-  --logo-color: #ffffff;
   background-color: var(--chrome-bg);
   color: var(--chrome-text);
 }

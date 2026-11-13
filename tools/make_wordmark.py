@@ -18,8 +18,10 @@ STATIC_NOTICE = os.path.join(REPO_ROOT, "sentinel", "server", "static", "brand",
 
 FONT_CANDIDATES = [
     os.path.expanduser("~/brand_src/Ethnocentric-Regular.otf"),
+    os.path.expanduser("~/brand_src/Ethnocentric-Light.otf"),
     os.path.expanduser("~/brand_src/ethnocentric rg.otf"),
     os.path.join(REPO_ROOT, "brand_src", "Ethnocentric-Regular.otf"),
+    os.path.join(REPO_ROOT, "brand_src", "Ethnocentric-Light.otf"),
 ]
 
 

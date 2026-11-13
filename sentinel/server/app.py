@@ -24,10 +24,20 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
         template_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), "templates")),
         static_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), "static")),
     )
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
     app.config["REPO"] = repo
     app.config["SENTINEL_TOKEN"] = token
     app.config["ENGINE"] = engine
     app.register_blueprint(api_v1)
+
+    @app.template_filter("middle_truncate")
+    def jinja_middle_truncate(val: str, max_len: int = 32) -> str:
+        if not val or len(val) <= max_len:
+            return val
+        head_len = (max_len - 3) // 2
+        tail_len = max_len - 3 - head_len
+        return f"{val[:head_len]}...{val[-tail_len:]}"
 
     @app.context_processor
     def inject_global_stats():

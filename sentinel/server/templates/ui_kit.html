@@ -17,56 +17,68 @@
   <div class="card-header-bar">
     <div class="card-header-title">
       <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-shield"></use></svg>
-      Brand Identity &bull; Isometric Stepped Monogram
+      Brand Identity
     </div>
-    <span class="badge online">PRODUCTION BRAND MARK</span>
+    <span class="badge online">PRODUCTION</span>
   </div>
   <div style="padding: 16px;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
-      <!-- Real Surface: On Dark Strip (Navy Blue Canvas) -->
-      <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; background: var(--surface-raised);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <b style="color: var(--text-primary); font-size: 13px;">On Dark (Sidebar Navy Canvas)</b>
-          <span class="badge info" style="font-size: 10px;">DEFAULT SHELL</span>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+      <!-- Real Surface: On Dark Strip -->
+      <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; background: var(--surface-raised);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <b style="color: var(--text-primary); font-size: 13px;">Dark Theme Surface</b>
         </div>
-        <div style="background: var(--preview-dark-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-dark-text);">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="Mark 16px" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="Mark 24px" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="Mark 48px" width="48" height="48">
+        <div style="background: var(--preview-dark-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-dark-text);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="16" width="16" height="16">
+            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="24" width="24" height="24">
+            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="48" width="48" height="48">
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="{{ url_for('static', filename='brand/logo.svg') }}" alt="Mark" width="22" height="22">
-            <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="14">
+          <div>
+            <img src="{{ url_for('static', filename='brand/logo-lockup.svg') }}" alt="Lockup" height="22">
           </div>
         </div>
       </div>
 
-      <!-- Real Surface: On Light Strip (White Canvas) -->
-      <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; background: var(--surface-raised);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <b style="color: var(--text-primary); font-size: 13px;">On Light (White Canvas)</b>
-          <span class="badge info" style="font-size: 10px;">LIGHT SURFACES</span>
+      <!-- Real Surface: On Light Strip -->
+      <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; background: var(--surface-raised);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <b style="color: var(--text-primary); font-size: 13px;">Light Theme Surface</b>
         </div>
-        <div style="background: var(--preview-light-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-light-text);">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="Mark 16px" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="Mark 24px" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="Mark 48px" width="48" height="48">
+        <div style="background: var(--preview-light-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-light-text);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="16" width="16" height="16">
+            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="24" width="24" height="24">
+            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="48" width="48" height="48">
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="{{ url_for('static', filename='brand/logo.svg') }}" alt="Mark" width="22" height="22">
-            <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="14">
+          <div>
+            <img src="{{ url_for('static', filename='brand/logo-lockup.svg') }}" alt="Lockup" height="22">
+          </div>
+        </div>
+      </div>
+
+      <!-- Real Surface: On Contrast Strip -->
+      <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; background: var(--surface-raised);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <b style="color: var(--text-primary); font-size: 13px;">Contrast Theme Surface</b>
+        </div>
+        <div style="background: var(--preview-contrast-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-contrast-text);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="16" width="16" height="16">
+            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="24" width="24" height="24">
+            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="48" width="48" height="48">
+          </div>
+          <div>
+            <img src="{{ url_for('static', filename='brand/logo-lockup.svg') }}" alt="Lockup" height="22">
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Decorative Fingerprint Motif Display -->
-    <div style="margin-top: 16px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; background: var(--surface-raised); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <!-- Procedural Fingerprint Motif Display -->
+    <div style="margin-top: 16px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; background: var(--surface-raised); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
       <div>
-        <b style="color: var(--text-primary); font-size: 13px;">Decorative Procedural Fingerprint Motif</b>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Wavy concentric ridges clipped to triangle geometry (&ge; 96px, 6-8% opacity).</div>
+        <b style="color: var(--text-primary); font-size: 13px;">Procedural Fingerprint Motif</b>
       </div>
       <div style="display: flex; align-items: center; gap: 24px;">
         <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96" style="margin: 0;">

@@ -79,9 +79,8 @@
   <aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-header">
       <img src="{{ url_for('static', filename='brand/logo.svg') }}" alt="Sentinel Mark" width="22" height="22">
-      <div class="hide-collapsed" style="display: flex; align-items: center; gap: 8px;">
-        <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="Sentinel Wordmark" height="13">
-        <span class="badge info" style="font-size: 9px; padding: 0 4px; height: 16px; line-height: 14px;">ENTERPRISE</span>
+      <div class="hide-collapsed" style="display: flex; align-items: center;">
+        <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="Sentinel" height="15">
       </div>
     </div>
 
@@ -264,6 +263,17 @@ document.addEventListener('keydown', function(e) {
     closeCmdPalette();
   }
 });
+
+function copyPath(el, text) {
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      if (typeof showToast === 'function') {
+        showToast('info', 'Copied: ' + text, 2000);
+      }
+    }).catch(function() {});
+  }
+}
 </script>
 
 {% block scripts %}{% endblock %}

@@ -56,22 +56,20 @@
   </div>
 </section>
 
-<!-- Behavioral Signals Legend (Compact Tooltips, Copy Diet) -->
-<section class="card" style="margin-bottom: 24px;">
-  <h2>Behavioral Signal Legend</h2>
-  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Canary trap tripped: bait decoy file was altered, moved, or deleted.">[DECOY] Canary Trap</span>
-    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Rapid tampering: >= 25 distinct files modified within a 5-second burst.">[SPEED] Rapid Burst</span>
-    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Content transformation: file turned into high-entropy or encrypted data.">[ENTROPY] High Entropy</span>
-    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Persistent noise: anomalous modification activity lasting 3+ seconds continuously.">[SUSTAINED] Persistent Drift</span>
-    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Evasion defense: low-and-slow file corruption pattern over an extended period.">[SLOW_SUSPICION] Evasion Drift</span>
-  </div>
-</section>
-
 <section id="alerts-feed-section" class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-    <div style="display: flex; align-items: center; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
       <h2>Live Threat &amp; Integrity Alerts</h2>
+      <details class="help-popover" style="position: relative; display: inline-block;">
+        <summary style="cursor: pointer; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border-subtle); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--text-muted); list-style: none;" title="Behavioral Signal Definitions">?</summary>
+        <div style="position: absolute; left: 0; top: 26px; z-index: 50; width: 280px; background: var(--surface-bg); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 12px; box-shadow: var(--shadow-popover); font-size: 11px; line-height: 1.5; color: var(--text-primary);">
+          <div style="margin-bottom: 6px;"><b>DECOY:</b> Canary bait tripped</div>
+          <div style="margin-bottom: 6px;"><b>SPEED:</b> &ge;25 files in 5s burst</div>
+          <div style="margin-bottom: 6px;"><b>ENTROPY:</b> High entropy/encrypted</div>
+          <div style="margin-bottom: 6px;"><b>SUSTAINED:</b> Drift lasting &ge;3s</div>
+          <div><b>SLOW:</b> Evasion pattern</div>
+        </div>
+      </details>
       <form action="{{ url_for('bulk_acknowledge_route') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Acknowledge and mark all {{ stats.total_open }} open alert(s) as resolved?');">
         <input type="hidden" name="actor" value="dashboard-admin">
         <input type="hidden" name="note" value="Bulk acknowledged">
@@ -84,8 +82,7 @@
   {% if not alerts %}
     <div class="empty-state">
       <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96">
-      <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Zero Open Integrity Alerts</div>
-      <div>All files match golden baseline hashes.</div>
+      <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">No open alerts.</div>
     </div>
   {% else %}
     <div style="overflow-x: auto; width: 100%;">
@@ -93,13 +90,13 @@
         <thead>
           <tr>
             <th style="width: 50px;">ID</th>
-            <th style="width: 110px;">Severity</th>
-            <th style="min-width: 280px;">Target Resource Path</th>
-            <th style="width: 140px;">Host Instance</th>
-            <th style="width: 110px;">Kinds</th>
-            <th style="width: 130px;">Threat Signals</th>
-            <th style="width: 110px;">Status</th>
-            <th class="action-col">Action</th>
+            <th style="width: 100px;">Severity</th>
+            <th style="min-width: 240px;">Target Resource Path</th>
+            <th style="width: 130px;">Host Instance</th>
+            <th style="width: 90px;">Kinds</th>
+            <th style="width: 130px;">Signals</th>
+            <th style="width: 90px;">Status</th>
+            <th class="action-col" style="width: 90px; text-align: right;">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -112,18 +109,26 @@
                 {{ a.severity }}
               </span>
             </td>
-            <td style="font-family: var(--font-mono); font-size: 12px; word-break: break-all; color: var(--text-primary);">{{ a.path }}</td>
-            <td style="color: var(--text-muted); font-size: 12px;">{{ a.host_id }}</td>
+            <td>
+              <span class="path-truncate" title="{{ a.path }}" onclick="copyPath(this, '{{ a.path }}')">{{ a.path | middle_truncate(34) }}</span>
+            </td>
+            <td>
+              <span class="path-truncate" title="{{ a.host_id }}" onclick="copyPath(this, '{{ a.host_id }}')">{{ a.host_id | middle_truncate(14) }}</span>
+            </td>
             <td style="color: var(--text-faint); font-size: 11px;">{{ a.kinds | join(', ') }}</td>
             <td>
               {% if a.signals %}
-                <span class="badge status-open" style="font-size: 10px;">{{ a.signals | join(', ') }}</span>
+                {% if a.signals | length > 1 %}
+                  <span class="badge" title="{{ a.signals | join(', ') }}">{{ a.signals[0] }} +{{ a.signals | length - 1 }}</span>
+                {% else %}
+                  <span class="badge" title="{{ a.signals[0] }}">{{ a.signals[0] }}</span>
+                {% endif %}
               {% else %}
                 <span class="muted">—</span>
               {% endif %}
             </td>
             <td><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
-            <td class="action-col">
+            <td class="action-col" style="text-align: right;">
               <a href="{{ url_for('alert_detail', alert_id=a.id) }}" class="btn-inspect">
                 Inspect &rarr;
               </a>

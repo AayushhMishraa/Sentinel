@@ -23,8 +23,7 @@
   {% if not hosts %}
     <div class="empty-state">
       <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96">
-      <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Zero Monitored Hosts</div>
-      <div>No agents registered yet.</div>
+      <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">No registered hosts.</div>
     </div>
   {% else %}
     <div style="overflow-x: auto; width: 100%;">
@@ -83,16 +82,18 @@
         {% for p in paths %}
         <tr>
           <td style="font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-primary);">{{ p.id }}</td>
-          <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">{{ p.path }}</td>
+          <td>
+            <span class="path-truncate" title="{{ p.path }}" onclick="copyPath(this, '{{ p.path }}')">{{ p.path | middle_truncate(40) }}</span>
+          </td>
           <td>
             {% if p.mode == 'protect' %}
-              <span class="badge" style="background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok);">PROTECT (AUTO-RESTORE)</span>
+              <span class="badge" title="Auto-restore enabled on drift" style="background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok);">PROTECT</span>
             {% else %}
-              <span class="badge" style="background: var(--sev-low-soft); color: var(--sev-low); border: 1px solid var(--sev-low);">MONITOR ONLY</span>
+              <span class="badge" title="Telemetry and alert generation only" style="background: var(--sev-low-soft); color: var(--sev-low); border: 1px solid var(--sev-low);">MONITOR</span>
             {% endif %}
           </td>
           <td>{% if p.decoys %}<span class="badge online">&check; Active</span>{% else %}<span class="badge offline">&cross; Disabled</span>{% endif %}</td>
-          <td>{% if p.capture_content %}<span class="badge online">&check; Text Diffs</span>{% else %}<span class="badge offline">&cross; Meta Only</span>{% endif %}</td>
+          <td>{% if p.capture_content %}<span class="badge online">&check; Diffs</span>{% else %}<span class="badge offline">&cross; Meta</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>

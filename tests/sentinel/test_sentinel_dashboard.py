@@ -134,3 +134,17 @@ def test_dynamic_tab_title_and_components(dashboard_client):
     assert "<title>Sentinel</title>" in resp_zero.get_data(as_text=True)
 
 
+def test_no_concept_references_in_served_pages(dashboard_client):
+    """Smoke test asserting no served dashboard page contains Concept A, B, or C."""
+    client, _ = dashboard_client
+    routes = ["/", "/assets", "/alerts/1", "/report", "/ui-kit"]
+    for r in routes:
+        resp = client.get(r)
+        assert resp.status_code == 200
+        text = resp.get_data(as_text=True)
+        assert "Concept A" not in text, f"Route {r} contains 'Concept A'"
+        assert "Concept B" not in text, f"Route {r} contains 'Concept B'"
+        assert "Concept C" not in text, f"Route {r} contains 'Concept C'"
+
+
+

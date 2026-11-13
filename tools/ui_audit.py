@@ -36,6 +36,8 @@ def run_check_1_and_2_and_3(app, client):
     errors = []
     routes_to_test = ["/", "/assets", "/alerts/1", "/report", "/ui-kit"]
     static_urls = set()
+    static_dir = os.path.join(REPO_ROOT, "sentinel", "server", "static")
+    templates_dir = os.path.join(REPO_ROOT, "sentinel", "server", "templates")
 
     external_url_regex = re.compile(r'(?:href|src|url)\s*=\s*["\'](https?://[^"\']+|//[^"\']+)["\']', re.IGNORECASE)
 
@@ -68,10 +70,17 @@ def run_check_1_and_2_and_3(app, client):
                 if "data-theme" not in first_script.group(1):
                     errors.append(f"Route {route} head <script> does not set data-theme")
 
-        # Gather static URLs
-        for m in re.finditer(r'(?:href|src)\s*=\s*["\'](/static/[^"\']+)["\']', html, re.IGNORECASE):
-            raw_url = m.group(1).split('#')[0]
-            static_urls.add(raw_url)
+        # Parse <img src>, <use href>, <link href>, <script src> in served HTML
+        for tag_pattern in [
+            r'<img\b[^>]*?\bsrc=["\']([^"\']+)["\']',
+            r'<use\b[^>]*?\bhref=["\']([^"\']+)["\']',
+            r'<link\b[^>]*?\bhref=["\']([^"\']+)["\']',
+            r'<script\b[^>]*?\bsrc=["\']([^"\']+)["\']',
+        ]:
+            for m in re.finditer(tag_pattern, html, re.IGNORECASE):
+                raw = m.group(1).split('#')[0].split('?')[0]
+                if raw.startswith('/static/'):
+                    static_urls.add(raw)
 
         # Check 2: check external URLs in HTML
         for m in external_url_regex.finditer(html):
@@ -80,7 +89,7 @@ def run_check_1_and_2_and_3(app, client):
                 continue
             errors.append(f"Route {route} contains external URL: {url}")
 
-    # Check all static URLs return 200
+    # Check all static URLs collected from served HTML return 200
     for s_url in sorted(static_urls):
         s_resp = client.get(s_url)
         if s_resp.status_code != 200:
@@ -93,6 +102,53 @@ def run_check_1_and_2_and_3(app, client):
                     u = m.group(1)
                     if "localhost" not in u and "127.0.0.1" not in u:
                         errors.append(f"Static file {s_url} contains external URL: {u}")
+
+    # Parse <img src>, <use href>, <link href>, <script src> in template source files
+    url_for_regex = re.compile(r"url_for\(\s*['\"]static['\"]\s*,\s*filename=['\"]([^'\"]+)['\"]\s*\)")
+    for root, _, files in os.walk(templates_dir):
+        for fname in files:
+            if fname.endswith((".html", ".j2")):
+                tpath = os.path.join(root, fname)
+                with open(tpath, "r", encoding="utf-8") as tf:
+                    tcontent = tf.read()
+                for tag_pattern in [
+                    r'<img\b[^>]*?\bsrc=["\']([^"\']+)["\']',
+                    r'<use\b[^>]*?\bhref=["\']([^"\']+)["\']',
+                    r'<link\b[^>]*?\bhref=["\']([^"\']+)["\']',
+                    r'<script\b[^>]*?\bsrc=["\']([^"\']+)["\']',
+                ]:
+                    for m in re.finditer(tag_pattern, tcontent, re.IGNORECASE):
+                        raw = m.group(1).split('#')[0].split('?')[0]
+                        m_uf = url_for_regex.search(raw)
+                        if m_uf:
+                            rel_fn = m_uf.group(1)
+                            f_on_disk = os.path.join(static_dir, rel_fn)
+                            if not os.path.isfile(f_on_disk):
+                                errors.append(f"Template {fname} references missing static file: {rel_fn}")
+                        elif raw.startswith('/static/'):
+                            rel_fn = raw[len('/static/'):]
+                            f_on_disk = os.path.join(static_dir, rel_fn)
+                            if not os.path.isfile(f_on_disk):
+                                errors.append(f"Template {fname} references missing static file: {raw}")
+
+    # Parse CSS url() in all static CSS files
+    for root, _, files in os.walk(static_dir):
+        for fname in files:
+            if fname.endswith(".css"):
+                cpath = os.path.join(root, fname)
+                with open(cpath, "r", encoding="utf-8") as cf:
+                    ccontent = cf.read()
+                for m in re.finditer(r'url\s*\(\s*["\']?([^"\'\)\?#]+)["\']?\s*\)', ccontent, re.IGNORECASE):
+                    u = m.group(1).strip()
+                    if u.startswith('data:') or u.startswith('http://') or u.startswith('https://'):
+                        continue
+                    if u.startswith('/static/'):
+                        rel_u = u[len('/static/'):]
+                        f_on_disk = os.path.join(static_dir, rel_u)
+                    else:
+                        f_on_disk = os.path.normpath(os.path.join(os.path.dirname(cpath), u))
+                    if not os.path.isfile(f_on_disk):
+                        errors.append(f"CSS {fname} references missing url() file: {u} (resolved to {f_on_disk})")
 
     return errors
 
