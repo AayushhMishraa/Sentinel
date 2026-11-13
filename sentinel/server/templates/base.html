@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% if open_alerts_count and open_alerts_count > 0 %}({{ open_alerts_count }}) Alerts - {% elif stats and stats.total_open > 0 %}({{ stats.total_open }}) Alerts - {% endif %}{% block title %}Sentinel{% endblock %}</title>
 
 <!-- Blocking Anti-Flicker Script: Synchronous theme resolution before any CSS render -->
 <script>
@@ -22,46 +21,34 @@
 })();
 </script>
 
+<title>{% if open_alerts_count and open_alerts_count > 0 %}({{ open_alerts_count }}) Alerts - {% elif stats and stats.total_open > 0 %}({{ stats.total_open }}) Alerts - {% endif %}{% block title %}Sentinel{% endblock %}</title>
+
+<!-- Favicon: Theme-Aware SVG -->
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='brand/favicon.svg') }}">
+
 <!-- Critical Preloads for Local Fonts -->
 <link rel="preload" href="{{ url_for('static', filename='fonts/inter-latin-400.woff2') }}" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="{{ url_for('static', filename='fonts/inter-latin-600.woff2') }}" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="{{ url_for('static', filename='fonts/jetbrains-mono-latin-400.woff2') }}" as="font" type="font/woff2" crossorigin>
 
-<!-- Critical Inline CSS: Prevents Flash of Unstyled Content (FOUC) and Sets Initial Canvas -->
-<style>
-  html {
-    background-color: #0b0f14;
-    color: #f1f5f9;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color-scheme: dark;
-  }
-  html[data-theme="light"] {
-    background-color: #f8fafc;
-    color: #0f172a;
-    color-scheme: light;
-  }
-  html[data-theme="contrast"] {
-    background-color: #000000;
-    color: #ffffff;
-    color-scheme: dark;
-  }
-  body {
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-    background-color: var(--surface-bg, #0b0f14);
-    background-image: var(--ambient-bg, none);
-    color: var(--text-primary, #f1f5f9);
-    font-size: 13px;
-    line-height: 1.5;
-  }
-</style>
-
 <!-- Semantic Tokens & Design System -->
 <link rel="stylesheet" href="{{ url_for('static', filename='tokens.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-<!-- Tailwind CSS v4 Browser Build (Vendored locally for 100% offline demo resilience) -->
+<style>
+@keyframes bounce-anim {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.6); color: var(--warn); }
+  65% { transform: scale(1.6); color: var(--warn); }
+  100% { transform: scale(1); }
+}
+.bounce-anim {
+  animation: bounce-anim 1.5s ease-in-out;
+  display: inline-block;
+}
+</style>
+
+<!-- Tailwind CSS v4 Browser Build (Vendored locally for offline demo resilience) -->
 <script src="{{ url_for('static', filename='vendor/tailwindcss-browser-4.3.5.js') }}"></script>
 <style type="text/tailwindcss">
   @theme {
@@ -85,541 +72,33 @@
     --color-sev-info: var(--sev-info);
   }
 </style>
-
-<!-- Layout Shell & UI Kit Component Styles -->
-<style>
-/* Enterprise Console Shell Layout */
-.app-shell {
-  display: flex;
-  min-height: 100vh;
-}
-.app-sidebar {
-  width: 240px;
-  flex-shrink: 0;
-  background-color: var(--chrome-bg, #090d16);
-  color: var(--chrome-text, #e2e8f0);
-  border-right: 1px solid var(--chrome-border, rgba(255,255,255,0.08));
-  display: flex;
-  flex-direction: column;
-  transition: width var(--dur-ui, 200ms) var(--ease-standard, ease);
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  z-index: 50;
-  user-select: none;
-}
-.app-sidebar.collapsed {
-  width: 64px;
-}
-.app-sidebar.collapsed .hide-collapsed {
-  display: none !important;
-}
-.app-sidebar.collapsed .sidebar-header {
-  padding: 14px 12px;
-  justify-content: center;
-}
-.app-sidebar.collapsed .nav-item {
-  padding: 10px 0;
-  justify-content: center;
-}
-.sidebar-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--chrome-border, rgba(255,255,255,0.08));
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.sidebar-nav {
-  flex: 1;
-  padding: 16px 12px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.nav-group-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-faint, #64748b);
-  padding: 0 10px 6px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm, 4px);
-  color: var(--chrome-text, #cbd5e1);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  transition: background var(--dur-fast, 120ms), color var(--dur-fast, 120ms);
-}
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-}
-.nav-item.active {
-  background: var(--chrome-active, rgba(56, 189, 248, 0.14));
-  color: var(--accent, #38bdf8);
-  font-weight: 600;
-}
-.sidebar-footer {
-  padding: 12px 16px;
-  border-top: 1px solid var(--chrome-border, rgba(255,255,255,0.08));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.sidebar-toggle-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.sidebar-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-/* App Body & Top Bar */
-.app-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background-color: var(--surface-bg, #0b0f14);
-}
-.app-topbar {
-  height: 48px;
-  background-color: var(--surface-card, #12161b);
-  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  box-shadow: var(--card-highlight);
-  position: sticky;
-  top: 0;
-  z-index: 40;
-}
-html[data-theme="light"] .app-topbar {
-  background-color: #ffffff;
-}
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.breadcrumb b {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.search-trigger {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--surface-raised, rgba(255,255,255,0.04));
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm, 4px);
-  padding: 5px 10px;
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all var(--dur-fast, 120ms);
-}
-.search-trigger:hover {
-  border-color: var(--border-strong);
-  color: var(--text-primary);
-}
-.search-trigger kbd {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  background: var(--surface-hover);
-  border: 1px solid var(--border-subtle);
-  border-radius: 3px;
-  padding: 1px 5px;
-}
-.host-selector-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-muted);
-  background: var(--surface-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm, 4px);
-  padding: 5px 10px;
-}
-.host-selector-badge b {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-/* User avatar */
-.user-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--surface-hover);
-  border: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-}
-
-/* Theme Switcher Header Controls */
-.theme-switcher {
-  display: inline-flex;
-  align-items: center;
-  background: var(--surface-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md, 6px);
-  padding: 2px;
-  gap: 2px;
-}
-.theme-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  padding: 3px 8px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--dur-fast, 120ms) ease;
-}
-.theme-btn:hover {
-  color: var(--text-primary);
-}
-.theme-btn.active {
-  background: var(--surface-hover);
-  color: var(--accent);
-}
-
-/* Standard Content Wrapper */
-main {
-  flex: 1;
-  max-width: 1440px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 24px;
-  box-sizing: border-box;
-}
-
-/* Page Header component */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-.page-title {
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-  margin: 0 0 4px 0;
-}
-.page-subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-/* Common UI Components & Cards */
-.card {
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md, 6px);
-  box-shadow: var(--card-highlight);
-  overflow: hidden;
-}
-.card-header-bar {
-  background: var(--panel-header-bg, rgba(255, 255, 255, 0.03));
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.card-header-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--panel-header-text, var(--text-primary));
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Badges & Chips */
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: var(--radius-sm, 4px); font-size: 11px; font-weight: 700; text-transform: uppercase; font-family: var(--font-mono); }
-.badge.critical { background: var(--sev-critical-soft); color: var(--sev-critical); border: 1px solid var(--sev-critical); }
-.badge.high { background: var(--sev-high-soft); color: var(--sev-high); border: 1px solid var(--sev-high); }
-.badge.medium { background: var(--sev-medium-soft); color: var(--sev-medium); border: 1px solid var(--sev-medium); }
-.badge.low { background: var(--sev-low-soft); color: var(--sev-low); border: 1px solid var(--sev-low); }
-.badge.info { background: var(--sev-info-soft); color: var(--sev-info); border: 1px solid var(--sev-info); }
-.badge.status-open { background: var(--danger-soft); color: var(--danger); }
-.badge.status-approved { background: var(--ok-soft); color: var(--ok); }
-.badge.status-rejected { background: var(--sev-high-soft); color: var(--sev-high); }
-.badge.status-acknowledged { background: var(--sev-high-soft); color: var(--sev-high); }
-.badge.online { background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok); }
-.badge.offline { background: var(--sev-info-soft); color: var(--text-faint); border: 1px solid var(--border-strong); }
-
-/* Severity Rail System */
-.sev-rail-critical { border-left: 3px solid var(--sev-critical); }
-.sev-rail-high { border-left: 3px solid var(--sev-high); }
-.sev-rail-medium { border-left: 3px solid var(--sev-medium); }
-.sev-rail-low { border-left: 3px solid var(--sev-low); }
-.sev-rail-info { border-left: 3px solid var(--sev-info); }
-
-/* Pulsing dot only for critical, disabled under prefers-reduced-motion */
-.dot-critical {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--sev-critical);
-  box-shadow: 0 0 6px var(--sev-critical);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .dot-critical {
-    animation: dot-pulse 1.8s infinite;
-  }
-}
-@keyframes dot-pulse {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.8; }
-}
-
-/* Dense Sortable Tables (28-32px rows, sticky head) */
-.dense-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  text-align: left;
-}
-.dense-table th {
-  position: sticky;
-  top: 0;
-  background: var(--table-head-bg, #0f141c);
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 8px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-faint);
-  z-index: 10;
-}
-.dense-table td {
-  padding: 6px 12px;
-  height: 30px;
-  border-bottom: 1px solid var(--border-subtle);
-  color: var(--text-primary);
-  box-sizing: border-box;
-}
-.dense-table tr:hover td {
-  background-color: var(--surface-hover);
-}
-.dense-table tr:nth-child(even) td {
-  background-color: var(--row-zebra, rgba(255,255,255,0.015));
-}
-.dense-table tr:nth-child(even):hover td {
-  background-color: var(--surface-hover);
-}
-.num-col {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
-}
-
-/* Stats Counter Grid & Test Animation Selectors */
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.stat-box { background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md, 6px); padding: 14px; text-align: center; box-shadow: var(--card-highlight); }
-.stat-val { display: inline-block; font-size: 26px; font-weight: 700; margin-top: 4px; transform-origin: center center; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-
-/* Restrained Highlight Animation for Test Compliance */
-@keyframes bounce-anim {
-  0% { transform: scale(1); }
-  35% { transform: scale(1.6); color: var(--warn); }
-  65% { transform: scale(1.6); color: var(--warn); }
-  100% { transform: scale(1); }
-}
-.bounce-anim {
-  animation: bounce-anim 1.5s ease-in-out;
-  display: inline-block;
-}
-
-/* Diff Viewer */
-.diff-container { background: #000; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px; font-family: var(--font-mono); font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
-.diff-line-add { color: #00ff9f; background: rgba(0,255,159,0.05); }
-.diff-line-del { color: #ff4444; background: rgba(255,68,68,0.05); }
-.diff-line-hdr { color: #33b5e5; }
-
-/* Round Integrity Score Badge */
-.score-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 2px solid var(--ok);
-  background: var(--ok-soft);
-  color: var(--ok);
-  font-size: 14px;
-  font-weight: 700;
-  font-family: var(--font-mono);
-}
-
-/* Skeleton loader */
-.skeleton {
-  background: linear-gradient(90deg, var(--surface-raised) 25%, var(--surface-hover) 50%, var(--surface-raised) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: var(--radius-sm);
-}
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Empty state */
-.empty-state {
-  padding: 48px 24px;
-  text-align: center;
-  color: var(--text-muted);
-}
-.empty-icon {
-  margin-bottom: 12px;
-  color: var(--text-faint);
-}
-
-/* Toast System */
-#toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  pointer-events: none;
-}
-.toast {
-  pointer-events: auto;
-  background: var(--surface-card);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md, 6px);
-  padding: 12px 18px;
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  min-width: 280px;
-}
-.toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-.toast-critical { border-left: 4px solid var(--sev-critical); }
-.toast-high { border-left: 4px solid var(--sev-high); }
-.toast-medium { border-left: 4px solid var(--sev-medium); }
-.toast-low { border-left: 4px solid var(--sev-low); }
-.toast-info { border-left: 4px solid var(--sev-info); }
-.toast-msg { font-size: 13px; font-weight: 500; color: var(--text-primary); }
-.toast-close {
-  background: none;
-  border: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
-  padding: 0 4px;
-}
-.toast-close:hover {
-  color: var(--text-primary);
-}
-
-/* SVG icons helper */
-.icon {
-  width: 16px;
-  height: 16px;
-  display: inline-block;
-  vertical-align: middle;
-  stroke-width: 2;
-  stroke: currentColor;
-  fill: none;
-}
-.icon-sm { width: 14px; height: 14px; }
-.icon-lg { width: 20px; height: 20px; }
-</style>
 </head>
 <body>
-
 <div class="app-shell">
-  <!-- Sidebar -->
+  <!-- Enterprise Sidebar Rail (Navy Blue Chrome across themes so logo remains white) -->
   <aside class="app-sidebar" id="app-sidebar">
-    <!-- Sidebar Header: Concept A Logo + Wordmark -->
     <div class="sidebar-header">
-      <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Sentinel Logo Concept A" width="24" height="24" style="flex-shrink: 0;">
-      <div class="hide-collapsed" style="line-height: 1;">
-        <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="16" style="display: block;">
-        <span style="font-size: 10px; color: var(--text-faint); font-family: var(--font-mono); letter-spacing: 0.05em;">FIM CONSOLE</span>
+      <img src="{{ url_for('static', filename='brand/logo.svg') }}" alt="Sentinel Mark" width="22" height="22">
+      <div class="hide-collapsed" style="display: flex; align-items: center; gap: 8px;">
+        <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="Sentinel Wordmark" height="13">
+        <span class="badge info" style="font-size: 9px; padding: 0 4px; height: 16px; line-height: 14px;">ENTERPRISE</span>
       </div>
     </div>
 
-    <!-- Grouped Nav with Collapsible Groups -->
+    <!-- Navigation Grouping -->
     <div class="sidebar-nav">
       <div>
         <div class="nav-group-title hide-collapsed">
-          <span>MONITORING</span>
+          <span>SURVEILLANCE</span>
           <svg class="icon icon-sm"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-chevron-down"></use></svg>
         </div>
         <nav style="display: flex; flex-direction: column; gap: 2px;">
-          <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}" title="Alerts Feed">
-            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-alert-triangle"></use></svg>
-            <span class="hide-collapsed" style="flex: 1;">Alerts Feed</span>
-            {% if stats and stats.total_open > 0 %}
-            <span class="badge critical hide-collapsed" style="font-size: 10px; padding: 1px 6px;">{{ stats.total_open }}</span>
-            {% endif %}
+          <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint in ('index', 'alert_detail') %}active{% endif %}" title="Alerts Feed">
+            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-bell"></use></svg>
+            <span class="hide-collapsed">Alerts Feed</span>
           </a>
           <a href="{{ url_for('assets_view') }}" class="nav-item {% if request.endpoint == 'assets_view' %}active{% endif %}" title="Monitored Assets">
-            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-server"></use></svg>
+            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-hard-drive"></use></svg>
             <span class="hide-collapsed">Monitored Assets</span>
           </a>
         </nav>
@@ -654,7 +133,7 @@ main {
 
   <!-- App Body -->
   <div class="app-body">
-    <!-- Top Bar -->
+    <!-- Top Bar: Left Breadcrumb, Center Wide Search, Right Theme & Profile -->
     <header class="app-topbar">
       <div class="topbar-left">
         <div class="breadcrumb">
@@ -664,14 +143,17 @@ main {
         </div>
       </div>
 
-      <div class="topbar-right">
-        <!-- Search Trigger with Ctrl+K Hint -->
-        <button type="button" class="search-trigger" id="cmd-k-trigger" onclick="alert('Command palette shortcut: Ctrl+K / Cmd+K')" title="Quick Command Palette">
-          <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-search"></use></svg>
-          <span style="font-size: 12px;">Search...</span>
+      <div class="topbar-center">
+        <button type="button" class="search-trigger" id="cmd-k-trigger" onclick="openCmdPalette()" title="Quick Command Palette (Ctrl+K)">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-search"></use></svg>
+            <span>Search hosts, paths, alerts...</span>
+          </div>
           <kbd>⌘K</kbd>
         </button>
+      </div>
 
+      <div class="topbar-right">
         <!-- Host Selector -->
         <div class="host-selector-badge" title="Filter by monitored host">
           <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-server"></use></svg>
@@ -696,6 +178,18 @@ main {
     <main>
       {% block content %}{% endblock %}
     </main>
+  </div>
+</div>
+
+<!-- Non-Blocking Command Palette Dialog (Ctrl+K) -->
+<div id="cmd-palette-dialog" class="modal-backdrop" style="display: none;" onclick="if(event.target===this)closeCmdPalette();">
+  <div class="modal-card" style="max-width: 480px;">
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; margin-bottom: 12px;">
+      <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-search"></use></svg>
+      <input type="text" id="cmd-palette-input" placeholder="Jump to path, host, or action... (Esc to close)" style="flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--text-primary); font-family: var(--font-sans);">
+      <kbd style="font-family: var(--font-mono); font-size: 10px; background: var(--surface-hover); border: 1px solid var(--border-subtle); border-radius: 3px; padding: 2px 6px; color: var(--text-muted);">ESC</kbd>
+    </div>
+    <div style="font-size: 11px; color: var(--text-faint); padding: 4px 0;">Quick links: <span style="color: var(--accent);">/</span> (Alerts), <span style="color: var(--accent);">/assets</span> (Fleet), <span style="color: var(--accent);">/ui-kit</span> (Design System)</div>
   </div>
 </div>
 
@@ -743,6 +237,33 @@ function updateThemeSwitcherUI() {
   });
 }
 document.addEventListener('DOMContentLoaded', updateThemeSwitcherUI);
+
+// Non-blocking Command Palette
+function openCmdPalette() {
+  const p = document.getElementById('cmd-palette-dialog');
+  if (p) {
+    p.style.display = 'flex';
+    setTimeout(function() {
+      const input = document.getElementById('cmd-palette-input');
+      if (input) input.focus();
+    }, 50);
+  }
+}
+
+function closeCmdPalette() {
+  const p = document.getElementById('cmd-palette-dialog');
+  if (p) p.style.display = 'none';
+}
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    openCmdPalette();
+  }
+  if (e.key === 'Escape') {
+    closeCmdPalette();
+  }
+});
 </script>
 
 {% block scripts %}{% endblock %}

@@ -62,8 +62,8 @@ def test_bulk_acknowledge_55_alerts(tmp_path):
     assert resp.status_code == 200
     html_after = resp.get_data(as_text=True)
 
-    # 3. Verify Open Alerts counter cleared to 0
-    assert 'class="stat-val" style="color: #fff;">0</div>' in html_after
+    # 3. Verify Open Alerts counter cleared to 0 (assert equivalent data element per copy diet)
+    assert '<div id="open-alerts-count" class="stat-val">0</div>' in html_after
     open_alerts_after = repo.list_alerts(status="open")
     assert len(open_alerts_after) == 0
 

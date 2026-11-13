@@ -9,112 +9,97 @@
 
 <section class="stats-grid">
   <div class="stat-box">
-    <div class="muted">OPEN ALERTS</div>
-    <div id="open-alerts-count" class="stat-val" style="color: #fff;">{{ stats.total_open }}</div>
+    <div class="stat-label">OPEN ALERTS</div>
+    <div id="open-alerts-count" class="stat-val">{{ stats.total_open }}</div>
   </div>
   <div class="stat-box">
-    <div class="muted">CRITICAL</div>
-    <div id="stat-critical" class="stat-val" style="color: #ff4444;">{{ stats.critical }}</div>
+    <div class="stat-label">CRITICAL</div>
+    <div id="stat-critical" class="stat-val" style="color: var(--sev-critical);">{{ stats.critical }}</div>
   </div>
   <div class="stat-box">
-    <div class="muted">HIGH</div>
-    <div id="stat-high" class="stat-val" style="color: #ff8800;">{{ stats.high }}</div>
+    <div class="stat-label">HIGH</div>
+    <div id="stat-high" class="stat-val" style="color: var(--sev-high);">{{ stats.high }}</div>
   </div>
   <div class="stat-box">
-    <div class="muted">MEDIUM</div>
-    <div id="stat-medium" class="stat-val" style="color: #ffcc00;">{{ stats.medium }}</div>
+    <div class="stat-label">MEDIUM</div>
+    <div id="stat-medium" class="stat-val" style="color: var(--sev-medium);">{{ stats.medium }}</div>
   </div>
   <div class="stat-box">
-    <div class="muted">LOW</div>
-    <div id="stat-low" class="stat-val" style="color: #33b5e5;">{{ stats.low }}</div>
+    <div class="stat-label">LOW</div>
+    <div id="stat-low" class="stat-val" style="color: var(--sev-low);">{{ stats.low }}</div>
   </div>
   <div class="stat-box">
-    <div class="muted">INFO</div>
-    <div id="stat-info" class="stat-val" style="color: #aaaaaa;">{{ stats.info }}</div>
+    <div class="stat-label">INFO</div>
+    <div id="stat-info" class="stat-val" style="color: var(--sev-info);">{{ stats.info }}</div>
   </div>
 </section>
 
-<!-- Inline SVG Activity Telemetry Chart -->
+<!-- Inline SVG Activity Telemetry Chart (No Glow) -->
 <section class="card" style="margin-bottom: 24px;">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
     <h2>Live Change Velocity (Events / Hour)</h2>
-    <div class="muted" style="font-size: 11px; font-family: var(--font-code);">ROLLING 24-HOUR WINDOW</div>
   </div>
   <div style="width: 100%; height: 110px; position: relative;">
-    <svg viewBox="0 0 600 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
+    <svg viewBox="0 0 600 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: hidden;">
       <defs>
         <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#00ff9f" stop-opacity="0.35"/>
-          <stop offset="100%" stop-color="#00ff9f" stop-opacity="0.0"/>
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.0"/>
         </linearGradient>
       </defs>
-      <!-- Background grid lines -->
-      <line x1="0" y1="25" x2="600" y2="25" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
-      <line x1="0" y1="50" x2="600" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
-      <line x1="0" y1="75" x2="600" y2="75" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
-      <!-- Inline SVG area & line -->
+      <line x1="0" y1="25" x2="600" y2="25" stroke="var(--border-subtle)" stroke-width="1" />
+      <line x1="0" y1="50" x2="600" y2="50" stroke="var(--border-subtle)" stroke-width="1" />
+      <line x1="0" y1="75" x2="600" y2="75" stroke="var(--border-subtle)" stroke-width="1" />
       <path d="{{ chart_area_path }}" fill="url(#chart-grad)" />
-      <path d="{{ chart_line_path }}" fill="none" stroke="#00ff9f" stroke-width="2.5" />
+      <path d="{{ chart_line_path }}" fill="none" stroke="var(--accent)" stroke-width="2" />
     </svg>
   </div>
 </section>
 
-<!-- Behavioral Signals Legend -->
+<!-- Behavioral Signals Legend (Compact Tooltips, Copy Diet) -->
 <section class="card" style="margin-bottom: 24px;">
   <h2>Behavioral Signal Legend</h2>
-  <div class="legend-grid">
-    <div class="legend-item">
-      <b>[DECOY]</b><br>
-      <span class="muted">Canary trap tripped: bait decoy file was altered, moved, or deleted.</span>
-    </div>
-    <div class="legend-item">
-      <b>[SPEED]</b><br>
-      <span class="muted">Rapid tampering: &ge; 25 distinct files modified within a 5-second burst.</span>
-    </div>
-    <div class="legend-item">
-      <b>[ENTROPY]</b><br>
-      <span class="muted">Content transformation: file turned into random-looking data (heuristic).</span>
-    </div>
-    <div class="legend-item">
-      <b>[SUSTAINED]</b><br>
-      <span class="muted">Persistent noise: anomalous modification activity lasting 3+ seconds continuously.</span>
-    </div>
-    <div class="legend-item">
-      <b>[SLOW_SUSPICION]</b><br>
-      <span class="muted">Evasion defense: low-and-slow file corruption pattern over an extended period.</span>
-    </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Canary trap tripped: bait decoy file was altered, moved, or deleted.">[DECOY] Canary Trap</span>
+    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Rapid tampering: >= 25 distinct files modified within a 5-second burst.">[SPEED] Rapid Burst</span>
+    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Content transformation: file turned into high-entropy or encrypted data.">[ENTROPY] High Entropy</span>
+    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Persistent noise: anomalous modification activity lasting 3+ seconds continuously.">[SUSTAINED] Persistent Drift</span>
+    <span class="badge" style="background: var(--surface-raised); border-color: var(--border-subtle); color: var(--text-primary); cursor: help;" title="Evasion defense: low-and-slow file corruption pattern over an extended period.">[SLOW_SUSPICION] Evasion Drift</span>
   </div>
 </section>
 
 <section id="alerts-feed-section" class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
     <div style="display: flex; align-items: center; gap: 16px;">
       <h2>Live Threat &amp; Integrity Alerts</h2>
       <form action="{{ url_for('bulk_acknowledge_route') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Acknowledge and mark all {{ stats.total_open }} open alert(s) as resolved?');">
         <input type="hidden" name="actor" value="dashboard-admin">
         <input type="hidden" name="note" value="Bulk acknowledged">
-        <button type="submit" id="bulk-ack-btn" {% if stats.total_open == 0 %}disabled style="opacity: 0.4; cursor: not-allowed; background: rgba(255, 136, 0, 0.08); color: #ffaa33; border: 1px solid rgba(255, 136, 0, 0.2); padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;"{% else %}style="background: rgba(255, 136, 0, 0.15); color: #ffaa33; border: 1px solid rgba(255, 136, 0, 0.4); padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;"{% endif %}>
-          &#10003; Bulk Acknowledge{% if stats.total_open > 0 %} ({{ stats.total_open }}){% endif %}
+        <button type="submit" id="bulk-ack-btn" {% if stats.total_open == 0 %}disabled style="opacity: 0.4; cursor: not-allowed; background: var(--sev-high-soft); color: var(--sev-high); border: 1px solid var(--border-subtle); padding: 4px 10px; border-radius: var(--radius-sm); font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 6px;"{% else %}style="background: var(--sev-high-soft); color: var(--sev-high); border: 1px solid var(--sev-high); padding: 4px 10px; border-radius: var(--radius-sm); font-weight: 600; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"{% endif %}>
+          &check; Bulk Acknowledge{% if stats.total_open > 0 %} ({{ stats.total_open }}){% endif %}
         </button>
       </form>
     </div>
-    <span class="muted" style="font-size: 12px; white-space: nowrap;">Auto-refreshing every 2s</span>
   </div>
   {% if not alerts %}
-    <p class="muted" style="margin-top: 16px;">No alerts recorded. All monitored files match current baselines.</p>
+    <div class="empty-state">
+      <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96">
+      <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Zero Open Integrity Alerts</div>
+      <div>All files match golden baseline hashes.</div>
+    </div>
   {% else %}
     <div style="overflow-x: auto; width: 100%;">
       <table class="dense-table" style="width: 100%;">
         <thead>
           <tr>
-            <th style="width: 45px;">ID</th>
+            <th style="width: 50px;">ID</th>
             <th style="width: 110px;">Severity</th>
             <th style="min-width: 280px;">Target Resource Path</th>
             <th style="width: 140px;">Host Instance</th>
             <th style="width: 110px;">Kinds</th>
             <th style="width: 130px;">Threat Signals</th>
             <th style="width: 110px;">Status</th>
-            <th style="text-align: right; width: 100px;">Action</th>
+            <th class="action-col">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -138,8 +123,8 @@
               {% endif %}
             </td>
             <td><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
-            <td style="text-align: right;">
-              <a href="{{ url_for('alert_detail', alert_id=a.id) }}" style="color: var(--ok); text-decoration: none; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; background: var(--ok-soft); border: 1px solid var(--ok);">
+            <td class="action-col">
+              <a href="{{ url_for('alert_detail', alert_id=a.id) }}" class="btn-inspect">
                 Inspect &rarr;
               </a>
             </td>
@@ -171,36 +156,19 @@ function showToast(severity, message, duration) {
 
   const badge = document.createElement('span');
   badge.className = `badge ${sevLower}`;
-  badge.textContent = (severity || 'info').toUpperCase();
+  badge.textContent = (severity || 'INFO').toUpperCase();
 
-  const msg = document.createElement('span');
-  msg.className = 'toast-msg';
-  msg.textContent = message;
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = message;
+  msgSpan.style.fontWeight = '500';
 
   row.appendChild(badge);
-  row.appendChild(msg);
-
-  const btn = document.createElement('button');
-  btn.className = 'toast-close';
-  btn.textContent = '\u00D7';
-  btn.onclick = () => {
-    toast.remove();
-    sessionStorage.removeItem('sentinel_active_toast');
-  };
-
+  row.appendChild(msgSpan);
   toast.appendChild(row);
-  toast.appendChild(btn);
   container.appendChild(toast);
-  requestAnimationFrame(() => {
-    toast.classList.add('show');
-  });
 
   setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => {
-      if (toast.parentElement) toast.remove();
-      sessionStorage.removeItem('sentinel_active_toast');
-    }, 300);
+    toast.remove();
   }, duration || 4000);
 }
 

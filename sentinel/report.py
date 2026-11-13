@@ -52,17 +52,26 @@ def generate_compliance_report_html(repo: Repository, days: int = 30) -> str:
 }})();
 </script>
 <title>Sentinel Compliance Report ({days} Days)</title>
+<link rel="stylesheet" href="/static/tokens.css">
 <style>
-  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; color: #111; line-height: 1.5; }}
-  h1 {{ margin-bottom: 4px; }}
-  .meta {{ color: #666; font-size: 14px; margin-bottom: 24px; }}
-  .summary-grid {{ display: flex; gap: 20px; margin-bottom: 30px; }}
-  .card {{ border: 1px solid #ddd; border-radius: 6px; padding: 14px; flex: 1; text-align: center; }}
-  .card-val {{ font-size: 24px; font-weight: bold; margin-top: 4px; }}
-  table {{ width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }}
-  th, td {{ border: 1px solid #ddd; padding: 8px 10px; text-align: left; }}
-  th {{ background: #f5f5f5; }}
-  code {{ font-family: monospace; font-size: 12px; }}
+  body {{
+    font-family: var(--font-sans);
+    margin: 40px;
+    background-color: var(--surface-bg);
+    color: var(--text-primary);
+    line-height: 1.5;
+    font-size: 13px;
+  }}
+  h1 {{ margin: 0 0 4px; font-size: 20px; }}
+  h2 {{ margin: 24px 0 12px; font-size: 15px; }}
+  .meta {{ color: var(--text-muted); font-size: 12px; }}
+  .summary-grid {{ display: flex; gap: 16px; margin: 24px 0; }}
+  .card {{ border: 1px solid var(--border-subtle); border-radius: 6px; padding: 14px; flex: 1; text-align: center; background: var(--surface-card); }}
+  .card-val {{ font-size: 22px; font-weight: bold; margin-top: 4px; }}
+  table {{ width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }}
+  th, td {{ border: 1px solid var(--border-subtle); padding: 8px 10px; text-align: left; }}
+  th {{ background: var(--table-head-bg); color: var(--text-faint); font-weight: 600; font-size: 11px; text-transform: uppercase; }}
+  code {{ font-family: var(--font-mono); font-size: 11px; }}
   @media print {{
     body {{ margin: 15mm; }}
     .no-print {{ display: none; }}
@@ -70,17 +79,22 @@ def generate_compliance_report_html(repo: Repository, days: int = 30) -> str:
 </style>
 </head>
 <body>
-  <h1>Sentinel File Integrity Compliance Report</h1>
-  <div class="meta">Audit Window: Last {days} Days | Generated: {time.strftime("%Y-%m-%d %H:%M:%S")}</div>
+  <header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; position: relative;">
+    <div>
+      <h1>Sentinel File Integrity Compliance Report</h1>
+      <div class="meta">Audit Window: Last {days} Days | Generated: {time.strftime("%Y-%m-%d %H:%M:%S")}</div>
+    </div>
+    <img src="/static/brand/fingerprint.svg" alt="" width="96" height="96" style="opacity: 0.07; pointer-events: none;">
+  </header>
 
   <div class="summary-grid">
     <div class="card"><div>Total Incidents</div><div class="card-val">{len(alerts)}</div></div>
-    <div class="card"><div>Open Alerts</div><div class="card-val" style="color: #d9534f;">{len(open_alerts)}</div></div>
-    <div class="card"><div>Approved Changes</div><div class="card-val" style="color: #5cb85c;">{len(approved)}</div></div>
-    <div class="card"><div>Rejected Violations</div><div class="card-val" style="color: #f0ad4e;">{len(rejected)}</div></div>
+    <div class="card"><div>Open Alerts</div><div class="card-val" style="color: var(--danger);">{len(open_alerts)}</div></div>
+    <div class="card"><div>Approved Changes</div><div class="card-val" style="color: var(--ok);">{len(approved)}</div></div>
+    <div class="card"><div>Rejected Violations</div><div class="card-val" style="color: var(--sev-high);">{len(rejected)}</div></div>
   </div>
 
-  <h2>Audit Trail & Change Records</h2>
+  <h2>Audit Trail &amp; Change Records</h2>
   <table>
     <thead>
       <tr>
@@ -95,10 +109,9 @@ def generate_compliance_report_html(repo: Repository, days: int = 30) -> str:
       </tr>
     </thead>
     <tbody>
-      {''.join(rows_html) if rows_html else '<tr><td colspan="8" style="text-align: center;">No alert activity recorded in this period.</td></tr>'}
+      {''.join(rows_html) if rows_html else '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No alert activity recorded in this period.</td></tr>'}
     </tbody>
   </table>
 </body>
 </html>
 """
-

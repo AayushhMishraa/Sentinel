@@ -6,7 +6,6 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Fleet Assets &amp; Monitored Endpoints</h1>
-    <p class="page-subtitle">Real-time status of connected agent instances and active filesystem integrity policies.</p>
   </div>
   <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-faint);">
     5 REGISTERED HOSTS &bull; HEARTBEAT TTL: 90s
@@ -23,12 +22,13 @@
   </div>
   {% if not hosts %}
     <div class="empty-state">
-      <div class="empty-icon"><svg class="icon icon-lg"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-server"></use></svg></div>
+      <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96">
+      <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Zero Monitored Hosts</div>
       <div>No agents registered yet.</div>
     </div>
   {% else %}
-    <div style="overflow-x: auto;">
-      <table class="dense-table">
+    <div style="overflow-x: auto; width: 100%;">
+      <table class="dense-table" style="width: 100%;">
         <thead>
           <tr>
             <th style="width: 140px;">Host ID</th>
@@ -68,8 +68,8 @@
     </div>
     <span class="badge info">{{ paths | length }} Paths Active</span>
   </div>
-  <div style="overflow-x: auto;">
-    <table class="dense-table">
+  <div style="overflow-x: auto; width: 100%;">
+    <table class="dense-table" style="width: 100%;">
       <thead>
         <tr>
           <th style="width: 110px;">Path ID</th>

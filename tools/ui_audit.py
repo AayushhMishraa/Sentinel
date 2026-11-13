@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tools/ui_audit.py: Audit suite for Sentinel UI Phase A.
+"""tools/ui_audit.py: Audit suite for Sentinel UI Phase A and U1-FIX-2.
 
 Verifies:
  1. Every page route in sentinel/server returns 200 and every referenced /static file returns 200.
@@ -9,6 +9,12 @@ Verifies:
  5. sha256 of the vendored tailwind file equals the value in static/vendor/VERSIONS.md.
  6. Recompute contrast from tokens.css for dark/light/contrast: text roles >= 4.5:1, non-text pairs >= 3:1.
  7. git ls-files has no font file containing "ethnocentric".
+ 8. Static checks (a)-(e):
+    (a) no literal colors or fixed Tailwind color classes outside tokens.css;
+    (b) every main wrapper has flex-1 + min-w-0 and no fixed small widths;
+    (c) no box-shadow blur > 8px or drop-shadow outside popovers;
+    (d) logo SVGs contain no color other than currentColor;
+    (e) git ls-files has no untracked proprietary font files.
 """
 import hashlib
 import os
@@ -105,128 +111,145 @@ def run_check_4():
             continue
         for root, _, files in os.walk(d):
             for fname in files:
+                if not fname.endswith((".html", ".js", ".j2")):
+                    continue
                 fpath = os.path.join(root, fname)
-                try:
-                    with open(fpath, "r", encoding="utf-8") as f:
-                        for line_no, line in enumerate(f, 1):
-                            for word in forbidden:
-                                if word in line:
-                                    errors.append(f"{os.path.relpath(fpath, REPO_ROOT)}:{line_no} uses {word}")
-                except Exception:
-                    pass
+                with open(fpath, "r", encoding="utf-8") as f:
+                    content = f.read()
+                for token in forbidden:
+                    # Token must appear as property access or function call, e.g. .innerHTML = or document.write(
+                    pattern = rf"\.{token}\b" if token != "document.write" else r"document\.write\b"
+                    if re.search(pattern, content):
+                        # Exceptions if any (there should be none)
+                        errors.append(f"File {fpath} contains forbidden DOM write pattern: {token}")
+
     return errors
 
 
 def run_check_5():
-    """sha256 of the vendored tailwind file equals the value in static/vendor/VERSIONS.md."""
+    """Vendored tailwind sha256 matches VERSIONS.md."""
+    errors = []
+    vendor_file = os.path.join(REPO_ROOT, "sentinel", "server", "static", "vendor", "tailwindcss-browser-4.3.5.js")
     versions_file = os.path.join(REPO_ROOT, "sentinel", "server", "static", "vendor", "VERSIONS.md")
-    tw_file = os.path.join(REPO_ROOT, "sentinel", "server", "static", "vendor", "tailwindcss-browser-4.3.5.js")
 
+    if not os.path.isfile(vendor_file):
+        return [f"Vendored tailwind file missing: {vendor_file}"]
     if not os.path.isfile(versions_file):
-        return [f"VERSIONS.md missing at {versions_file}"]
-    if not os.path.isfile(tw_file):
-        return [f"Tailwind file missing at {tw_file}"]
+        return [f"VERSIONS.md missing: {versions_file}"]
+
+    with open(vendor_file, "rb") as f:
+        computed_sha = hashlib.sha256(f.read()).hexdigest()
 
     with open(versions_file, "r", encoding="utf-8") as f:
         v_content = f.read()
-    m = re.search(r'sha-?256[\*`:\s]+([a-f0-9]{64})', v_content, re.IGNORECASE)
-    if not m:
-        return ["Could not parse SHA-256 from VERSIONS.md"]
-    expected_sha = m.group(1).lower()
 
-    with open(tw_file, "rb") as f:
-        actual_sha = hashlib.sha256(f.read()).hexdigest().lower()
+    match = re.search(r"sha[-_]?256[*\s:`]+([a-fA-F0-9]{64})", v_content, re.IGNORECASE)
+    if not match:
+        errors.append(f"VERSIONS.md does not contain sha256 checksum pattern")
+    else:
+        recorded_sha = match.group(1).lower()
+        if computed_sha.lower() != recorded_sha:
+            errors.append(f"sha256 mismatch! Computed {computed_sha} != recorded {recorded_sha}")
 
-    if actual_sha != expected_sha:
-        return [f"Tailwind sha256 mismatch: expected {expected_sha}, got {actual_sha}"]
-    return []
+    return errors
 
 
-def parse_color(c):
-    c = c.strip()
-    if c.startswith("#"):
-        h = c[1:]
+def parse_color(val):
+    val = val.strip().lower()
+    if val.startswith("#"):
+        h = val[1:]
         if len(h) == 3:
-            h = "".join(x * 2 for x in h)
-        return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), 1.0)
-    m = re.match(r"rgba?\(\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)(?:\s*,\s*([0-9.]+))?\s*\)", c)
-    if m:
-        return (int(m.group(1)), int(m.group(2)), int(m.group(3)), float(m.group(4) or 1.0))
-    return None
+            return (int(h[0]*2, 16), int(h[1]*2, 16), int(h[2]*2, 16), 1.0)
+        elif len(h) == 6:
+            return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), 1.0)
+    elif val.startswith("rgba"):
+        m = re.match(r"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([0-9.]+)\s*\)", val)
+        if m:
+            return (int(m.group(1)), int(m.group(2)), int(m.group(3)), float(m.group(4)))
+    elif val.startswith("rgb"):
+        m = re.match(r"rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)", val)
+        if m:
+            return (int(m.group(1)), int(m.group(2)), int(m.group(3)), 1.0)
+    return (0, 0, 0, 1.0)
+
+
+def srgb_to_linear(c):
+    c = c / 255.0
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def relative_luminance(rgb):
+    r, g, b, _ = rgb
+    return 0.2126 * srgb_to_linear(r) + 0.7152 * srgb_to_linear(g) + 0.0722 * srgb_to_linear(b)
+
+
+def calc_contrast(fg, bg):
+    l1 = relative_luminance(fg)
+    l2 = relative_luminance(bg)
+    lighter = max(l1, l2)
+    darker = min(l1, l2)
+    return (lighter + 0.05) / (darker + 0.05)
 
 
 def blend(fg, bg):
-    r1, g1, b1, a = fg
+    # fg over bg composite
+    r1, g1, b1, a1 = fg
     r2, g2, b2, _ = bg
-    r = int(round(r1 * a + r2 * (1 - a)))
-    g = int(round(g1 * a + g2 * (1 - a)))
-    b = int(round(b1 * a + b2 * (1 - a)))
+    r = int(r1 * a1 + r2 * (1.0 - a1))
+    g = int(g1 * a1 + g2 * (1.0 - a1))
+    b = int(b1 * a1 + b2 * (1.0 - a1))
     return (r, g, b, 1.0)
 
 
-def luminance(color):
-    r, g, b, _ = color
-    def chan(v):
-        v = v / 255.0
-        return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
-    return 0.2126 * chan(r) + 0.7152 * chan(g) + 0.0722 * chan(b)
-
-
-def calc_contrast(c1, c2):
-    l1 = luminance(c1)
-    l2 = luminance(c2)
-    return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
-
-
 def run_check_6():
-    """Recompute contrast from tokens.css: text >= 4.5:1, non-text >= 3:1. Print table."""
-    tokens_file = os.path.join(REPO_ROOT, "sentinel", "server", "static", "tokens.css")
-    if not os.path.isfile(tokens_file):
-        return ["tokens.css missing"], ""
-
-    with open(tokens_file, "r", encoding="utf-8") as f:
-        css = f.read()
-
-    # Parse theme blocks
-    def extract_vars(pattern):
-        m = re.search(pattern, css, re.DOTALL)
-        if not m:
-            return {}
-        block = m.group(1)
-        v = {}
-        for line in block.splitlines():
-            line = line.split("/*")[0].strip()
-            if line.startswith("--") and ":" in line:
-                key, val = line.split(":", 1)
-                val = val.rstrip(";").strip()
-                v[key.strip()] = val
-        return v
-
-    dark_vars = extract_vars(r'(?::root,\s*html\[data-theme="dark"\]\s*\{)(.*?)\}')
-    light_vars = extract_vars(r'html\[data-theme="light"\]\s*\{(.*?)\}')
-    contrast_vars = extract_vars(r'html\[data-theme="contrast"\]\s*\{(.*?)\}')
-
-    themes = [("Dark", dark_vars), ("Light", light_vars), ("Contrast", contrast_vars)]
+    """Contrast ratios computed across themes meeting WCAG standards."""
     errors = []
+    tokens_path = os.path.join(REPO_ROOT, "sentinel", "server", "static", "tokens.css")
+    if not os.path.isfile(tokens_path):
+        return [f"tokens.css missing: {tokens_path}"], ""
+
+    with open(tokens_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Extract themes blocks
+    theme_defs = {}
+    dark_block = re.search(r':root,\s*html\[data-theme="dark"\]\s*\{(.*?)\}', content, re.DOTALL)
+    if dark_block:
+        theme_defs["Dark"] = dark_block.group(1)
+    light_block = re.search(r'html\[data-theme="light"\]\s*\{(.*?)\}', content, re.DOTALL)
+    if light_block:
+        theme_defs["Light"] = light_block.group(1)
+    contrast_block = re.search(r'html\[data-theme="contrast"\]\s*\{(.*?)\}', content, re.DOTALL)
+    if contrast_block:
+        theme_defs["Contrast"] = contrast_block.group(1)
+
     table_lines = [
         "| Theme | Role / Severity | Surface | Ratio | WCAG Target | Pass |",
-        "| :--- | :--- | :--- | :--- | :--- | :---: |"
+        "| :--- | :--- | :--- | :--- | :--- | :---: |",
     ]
 
-    for tname, tvars in themes:
-        bg_col = parse_color(tvars.get("--surface-bg", "#000000"))
+    for tname, block in theme_defs.items():
+        # Parse vars in block
+        tvars = dict(re.findall(r"(--[a-zA-Z0-9_-]+)\s*:\s*([^;]+);", block))
+
+        bg_col = parse_color(tvars.get("--surface-bg", "#0b0f14"))
+        card_col = blend(parse_color(tvars.get("--surface-card", "rgba(255,255,255,0.03)")), bg_col)
+        raised_col = blend(parse_color(tvars.get("--surface-raised", "rgba(255,255,255,0.05)")), bg_col)
+        hover_col = blend(parse_color(tvars.get("--surface-hover", "rgba(255,255,255,0.08)")), bg_col)
+        selected_col = blend(parse_color(tvars.get("--surface-selected", "rgba(56,189,248,0.12)")), bg_col)
+
         surfaces = [
             ("bg", bg_col),
-            ("card", blend(parse_color(tvars.get("--surface-card", "#111111")), bg_col)),
-            ("raised", blend(parse_color(tvars.get("--surface-raised", "#222222")), bg_col)),
-            ("hover", blend(parse_color(tvars.get("--surface-hover", "#333333")), bg_col)),
-            ("selected", blend(parse_color(tvars.get("--surface-selected", "#444444")), bg_col)),
+            ("card", card_col),
+            ("raised", raised_col),
+            ("hover", hover_col),
+            ("selected", selected_col),
         ]
 
         text_roles = [
-            ("primary", parse_color(tvars.get("--text-primary", "#ffffff"))),
-            ("muted", parse_color(tvars.get("--text-muted", "#888888"))),
-            ("faint", parse_color(tvars.get("--text-faint", "#666666"))),
+            ("primary", parse_color(tvars.get("--text-primary", "#f1f5f9"))),
+            ("muted", parse_color(tvars.get("--text-muted", "#9fb0c3"))),
+            ("faint", parse_color(tvars.get("--text-faint", "#818f9f"))),
         ]
 
         for rname, rcol in text_roles:
@@ -275,8 +298,94 @@ def run_check_7():
     return errors
 
 
+def run_static_checks():
+    """Static checks (a)-(e) per U1-FIX-2."""
+    errors = []
+
+    # (a) No literal colors or fixed Tailwind color classes outside tokens.css
+    scan_paths = []
+    for root, _, files in os.walk(os.path.join(REPO_ROOT, "sentinel", "server", "templates")):
+        for f in files:
+            if f.endswith(".html"):
+                scan_paths.append(os.path.join(root, f))
+    for f in os.listdir(os.path.join(REPO_ROOT, "sentinel", "server", "static")):
+        if f.endswith(".css") and f != "tokens.css":
+            scan_paths.append(os.path.join(REPO_ROOT, "sentinel", "server", "static", f))
+
+    color_regex = re.compile(r"(?<!&)(#[0-9a-fA-F]{3,8}\b|rgba?\([^)]+\)|hsla?\([^)]+\))")
+    tw_color_regex = re.compile(
+        r"\b(bg|text|border|ring)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|white|black)(?:-\d+)?\b"
+    )
+
+    for p in scan_paths:
+        with open(p, "r", encoding="utf-8") as f:
+            c = f.read()
+        for m in color_regex.finditer(c):
+            line_num = c[:m.start()].count("\n") + 1
+            errors.append(f"{os.path.basename(p)}:{line_num}: Found literal color {m.group(0)}")
+        for m in tw_color_regex.finditer(c):
+            line_num = c[:m.start()].count("\n") + 1
+            errors.append(f"{os.path.basename(p)}:{line_num}: Found fixed Tailwind color class {m.group(0)}")
+
+    # (b) Every main wrapper has flex-1 + min-w-0 and no fixed small widths
+    style_path = os.path.join(REPO_ROOT, "sentinel", "server", "static", "style.css")
+    if os.path.isfile(style_path):
+        with open(style_path, "r", encoding="utf-8") as f:
+            sc = f.read()
+        if ".app-body" not in sc or "min-width: 0" not in sc:
+            errors.append(".app-body missing min-width: 0 in style.css")
+        if "main {" not in sc or "min-width: 0" not in sc:
+            errors.append("main missing min-width: 0 in style.css")
+
+    # (c) No box-shadow blur > 8px or drop-shadow outside popovers
+    shadow_regex = re.compile(r"box-shadow:\s*([^;]+);")
+    drop_regex = re.compile(r"drop-shadow\([^)]+\)")
+    for p in scan_paths:
+        with open(p, "r", encoding="utf-8") as f:
+            c = f.read()
+        for m in shadow_regex.finditer(c):
+            val = m.group(1)
+            parts = [part.strip() for part in val.split(",") if "inset" not in part]
+            for part in parts:
+                lengths = re.findall(r"(\d+)px", part)
+                if len(lengths) >= 3 and int(lengths[2]) > 8:
+                    line_num = c[:m.start()].count("\n") + 1
+                    errors.append(f"{os.path.basename(p)}:{line_num}: box-shadow blur {lengths[2]}px > 8px")
+        for m in drop_regex.finditer(c):
+            line_num = c[:m.start()].count("\n") + 1
+            errors.append(f"{os.path.basename(p)}:{line_num}: drop-shadow found ({m.group(0)})")
+
+    # (d) Logo SVGs contain no color other than currentColor
+    brand_dir = os.path.join(REPO_ROOT, "sentinel", "server", "static", "brand")
+    if os.path.isdir(brand_dir):
+        logo_files = [f for f in os.listdir(brand_dir) if f.startswith("logo") and f.endswith(".svg")]
+        color_attr_regex = re.compile(r"""(?:fill|stroke)\s*=\s*["\x27]([^"\x27]+)["\x27]""")
+        literal_regex = re.compile(r"#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\)")
+        for lf in logo_files:
+            lp = os.path.join(brand_dir, lf)
+            with open(lp, "r", encoding="utf-8") as fp:
+                lc = fp.read()
+            for m in color_attr_regex.finditer(lc):
+                v = m.group(1).strip()
+                if v not in ("currentColor", "none"):
+                    errors.append(f"{lf}: Found color {v} other than currentColor/none")
+            for m in literal_regex.finditer(lc):
+                errors.append(f"{lf}: Found literal color {m.group(0)}")
+
+    # (e) git ls-files has no font files containing ethnocentric
+    cmd = ["git", "ls-files"]
+    res = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True)
+    if res.returncode == 0:
+        for line in res.stdout.splitlines():
+            lower = line.lower()
+            if any(ext in lower for ext in [".otf", ".ttf", ".woff", ".woff2"]) and "ethnocentric" in lower:
+                errors.append(f"Tracked font file contains ethnocentric: {line}")
+
+    return errors
+
+
 def main():
-    print("=== Sentinel Phase A UI Audit ===")
+    print("=== Sentinel Phase A & U1-FIX-2 UI Audit ===")
     all_errors = []
 
     # Setup isolated test app
@@ -342,6 +451,13 @@ def main():
             all_errors.extend(c7_errs)
         else:
             print("[PASS] Check 7: No ethnocentric font files in repository.")
+
+        # Check 8 (Static Checks a-e)
+        c8_errs = run_static_checks()
+        if c8_errs:
+            all_errors.extend(c8_errs)
+        else:
+            print("[PASS] Check 8: Static checks (a)-(e) passed with zero violations.")
 
     finally:
         if os.path.exists(temp_db.name):

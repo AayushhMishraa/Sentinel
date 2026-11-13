@@ -63,6 +63,7 @@ html[data-theme="dark"] {
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.20);
   --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-popover: 0 4px 8px rgba(0, 0, 0, 0.25);
 
   /* Typography */
   --text-primary: #f1f5f9;
@@ -72,6 +73,9 @@ html[data-theme="dark"] {
   /* Accent & Focus */
   --accent: #38bdf8;
   --focus-ring: #38bdf8;
+
+  /* Brand / Logo */
+  --logo-color: #ffffff;
 
   /* Status & Severity (Solid) */
   --ok: #10b981;
@@ -91,23 +95,32 @@ html[data-theme="dark"] {
   --sev-low-soft: rgba(56, 189, 248, 0.16);
   --sev-info-soft: rgba(148, 163, 184, 0.16);
 
+  /* Diff Syntax Colors */
+  --diff-bg: #000000;
+  --diff-add-text: #10b981;
+  --diff-add-bg: rgba(16, 185, 129, 0.10);
+  --diff-del-text: #f43f5e;
+  --diff-del-bg: rgba(244, 63, 94, 0.10);
+  --diff-hdr-text: #38bdf8;
+
   /* Ambient Layer */
   --ambient-bg: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.04) 0%, transparent 60%);
 
-  /* Chrome (High contrast, clearly visible border) */
-  --chrome-bg: #000000;
-  --chrome-text: #ffffff;
-  --chrome-active: rgba(0, 229, 255, 0.25);
-  --chrome-border: rgba(255, 255, 255, 0.35);
+  /* Chrome (Sidebar: dark navy across themes) */
+  --chrome-bg: #090d16;
+  --chrome-text: #f1f5f9;
+  --chrome-active: rgba(56, 189, 248, 0.16);
+  --chrome-border: rgba(255, 255, 255, 0.08);
 
   /* Panels & Tables */
   --panel-header-bg: #161616;
   --panel-header-text: #ffffff;
-  --table-head-bg: #181818;
-  --row-zebra: rgba(255, 255, 255, 0.03);
+  --table-head-bg: #121721;
+  --row-zebra: rgba(255, 255, 255, 0.02);
 
   /* Legacy Compatibility Mapping */
   --bg: var(--surface-bg);
+  --card: var(--surface-card);
   --bg-card: var(--surface-card);
   --border: var(--border-subtle);
   --text: var(--text-primary);
@@ -141,6 +154,9 @@ html[data-theme="light"] {
   --accent: #0284c7;
   --focus-ring: #0284c7;
 
+  /* Brand / Logo (On light surface it's dark; in navy sidebar it's white) */
+  --logo-color: #0b0f14;
+
   /* Status & Severity (Solid) */
   --ok: #047857;
   --danger: #be123c;
@@ -159,14 +175,22 @@ html[data-theme="light"] {
   --sev-low-soft: rgba(3, 105, 161, 0.12);
   --sev-info-soft: rgba(71, 85, 105, 0.12);
 
+  /* Diff Syntax Colors */
+  --diff-bg: #f1f5f9;
+  --diff-add-text: #047857;
+  --diff-add-bg: rgba(4, 120, 87, 0.12);
+  --diff-del-text: #be123c;
+  --diff-del-bg: rgba(190, 18, 60, 0.12);
+  --diff-hdr-text: #0369a1;
+
   /* Ambient Layer */
   --ambient-bg: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.05) 0%, transparent 60%);
 
-  /* Chrome (Sidebar stays dark navy in light and dark themes) */
-  --chrome-bg: #0b1120;
+  /* Chrome (Sidebar stays navy blue so logo remains white) */
+  --chrome-bg: #090d16;
   --chrome-text: #f1f5f9;
-  --chrome-active: rgba(2, 132, 199, 0.25);
-  --chrome-border: rgba(255, 255, 255, 0.10);
+  --chrome-active: rgba(56, 189, 248, 0.16);
+  --chrome-border: rgba(255, 255, 255, 0.08);
 
   /* Panels & Tables */
   --panel-header-bg: #f8fafc;
@@ -176,6 +200,7 @@ html[data-theme="light"] {
 
   /* Legacy Compatibility Mapping */
   --bg: var(--surface-bg);
+  --card: var(--surface-card);
   --bg-card: var(--surface-card);
   --border: var(--border-subtle);
   --text: var(--text-primary);
@@ -209,6 +234,9 @@ html[data-theme="contrast"] {
   --accent: #00e5ff;
   --focus-ring: #00e5ff;
 
+  /* Brand / Logo */
+  --logo-color: #ffffff;
+
   /* Status & Severity (Vibrant rails/dots only) */
   --ok: #00ff9f;
   --danger: #ff0033;
@@ -227,6 +255,14 @@ html[data-theme="contrast"] {
   --sev-low-soft: rgba(0, 229, 255, 0.24);
   --sev-info-soft: rgba(226, 232, 240, 0.24);
 
+  /* Diff Syntax Colors */
+  --diff-bg: #000000;
+  --diff-add-text: #00ff9f;
+  --diff-add-bg: rgba(0, 255, 159, 0.20);
+  --diff-del-text: #ff0033;
+  --diff-del-bg: rgba(255, 0, 51, 0.20);
+  --diff-hdr-text: #00e5ff;
+
   /* Ambient Layer - Disabled in contrast mode for purity */
   --ambient-bg: none;
 
@@ -244,6 +280,7 @@ html[data-theme="contrast"] {
 
   /* Legacy Compatibility Mapping */
   --bg: var(--surface-bg);
+  --card: var(--surface-card);
   --bg-card: var(--surface-card);
   --border: var(--border-subtle);
   --text: var(--text-primary);
@@ -275,4 +312,16 @@ html[data-theme="contrast"] {
     0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%,
     0.932 37.2%, 0.968 41%, 0.991 45.4%, 1.002 50.1%, 1.006 55.6%, 1 100%
   );
+  /* Brand Showcase Strip Tokens */
+  --preview-dark-bg: #090d16;
+  --preview-dark-text: #ffffff;
+  --preview-light-bg: #ffffff;
+  --preview-light-text: #0b0f14;
+}
+
+/* Sidebar Override: Navy blue container ensures white logo in all themes */
+.app-sidebar {
+  --logo-color: #ffffff;
+  background-color: var(--chrome-bg);
+  color: var(--chrome-text);
 }

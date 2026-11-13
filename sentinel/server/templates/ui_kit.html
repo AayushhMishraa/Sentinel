@@ -6,217 +6,143 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Enterprise Security Console Design System</h1>
-    <p class="page-subtitle">Restrained, high-density 2026 SaaS design tokens tested across Dark, Light, and Demo Contrast themes.</p>
   </div>
   <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-faint);">
     TAILWIND v4.3.5 &bull; TOKENS &bull; WCAG 2.1 AA
   </div>
 </div>
 
-<!-- 1. BRAND & LOGO MARK CONCEPTS (A, B, C Showcase) -->
+<!-- 1. BRAND IDENTITY & LOGO MARK -->
 <section class="card" style="margin-bottom: 24px;">
   <div class="card-header-bar">
     <div class="card-header-title">
       <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-shield"></use></svg>
-      Brand Identity &bull; Logo Mark Concepts A, B, C
+      Brand Identity &bull; Isometric Stepped Monogram
     </div>
-    <span class="badge info">ACTIVE SHELL: CONCEPT A</span>
+    <span class="badge online">PRODUCTION BRAND MARK</span>
   </div>
-  <div style="padding: 20px;">
-    <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-muted);">
-      Three original SVG concepts rendered at 16px, 24px, and 48px, plus brand lockups tested against the dark navy sidebar canvas and pure white.
-    </p>
-
+  <div style="padding: 16px;">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
-      <!-- Concept A Card -->
+      <!-- Real Surface: On Dark Strip (Navy Blue Canvas) -->
       <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; background: var(--surface-raised);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <b style="color: var(--text-primary); font-size: 13px;">Concept A: Watch-Hexagon</b>
-          <span class="badge critical" style="font-size: 10px;">CURRENT SHELL</span>
+          <b style="color: var(--text-primary); font-size: 13px;">On Dark (Sidebar Navy Canvas)</b>
+          <span class="badge info" style="font-size: 10px;">DEFAULT SHELL</span>
         </div>
-        <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 14px 0;">Regular hexagon contour with precision inner aperture and central integrity focus dot.</p>
-
-        <!-- Dark Background Preview -->
-        <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; color: #fff;">
+        <div style="background: var(--preview-dark-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-dark-text);">
           <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Concept A 16px" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Concept A 24px" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Concept A 48px" width="48" height="48">
+            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="Mark 16px" width="16" height="16">
+            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="Mark 24px" width="24" height="24">
+            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="Mark 48px" width="48" height="48">
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Concept A" width="22" height="22">
-            <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="14">
-          </div>
-        </div>
-
-        <!-- White Background Preview -->
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 14px; display: flex; align-items: center; justify-content: space-between; color: #0f172a;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Concept A 16px" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Concept A 24px" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Concept A 48px" width="48" height="48">
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="{{ url_for('static', filename='brand/logo-a.svg') }}" alt="Concept A" width="22" height="22">
+            <img src="{{ url_for('static', filename='brand/logo.svg') }}" alt="Mark" width="22" height="22">
             <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="14">
           </div>
         </div>
       </div>
 
-      <!-- Concept B Card -->
+      <!-- Real Surface: On Light Strip (White Canvas) -->
       <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; background: var(--surface-raised);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <b style="color: var(--text-primary); font-size: 13px;">Concept B: Fingerprint Shield</b>
-          <span class="badge info" style="font-size: 10px;">CANDIDATE B</span>
+          <b style="color: var(--text-primary); font-size: 13px;">On Light (White Canvas)</b>
+          <span class="badge info" style="font-size: 10px;">LIGHT SURFACES</span>
         </div>
-        <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 14px 0;">Structural security shield enclosing 3 concentric biometric integrity arcs.</p>
-
-        <!-- Dark Background Preview -->
-        <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; color: #fff;">
+        <div style="background: var(--preview-light-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-light-text);">
           <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="{{ url_for('static', filename='brand/logo-b.svg') }}" alt="Concept B 16px" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-b.svg') }}" alt="Concept B 24px" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-b.svg') }}" alt="Concept B 48px" width="48" height="48">
+            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="Mark 16px" width="16" height="16">
+            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="Mark 24px" width="24" height="24">
+            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="Mark 48px" width="48" height="48">
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="{{ url_for('static', filename='brand/logo-b.svg') }}" alt="Concept B" width="22" height="22">
-            <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="14">
-          </div>
-        </div>
-
-        <!-- White Background Preview -->
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 14px; display: flex; align-items: center; justify-content: space-between; color: #0f172a;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="{{ url_for('static', filename='brand/logo-b.svg') }}" alt="Concept B 16px" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-b.svg') }}" alt="Concept B 24px" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-b.svg') }}" alt="Concept B 48px" width="48" height="48">
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="{{ url_for('static', filename='brand/logo-b.svg') }}" alt="Concept B" width="22" height="22">
+            <img src="{{ url_for('static', filename='brand/logo.svg') }}" alt="Mark" width="22" height="22">
             <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="14">
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Concept C Card -->
-      <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; background: var(--surface-raised);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <b style="color: var(--text-primary); font-size: 13px;">Concept C: Geometric Offset 'S'</b>
-          <span class="badge info" style="font-size: 10px;">CANDIDATE C</span>
-        </div>
-        <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 14px 0;">Dual interlocked angular segments forming an architectural lettermark.</p>
-
-        <!-- Dark Background Preview -->
-        <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; color: #fff;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="{{ url_for('static', filename='brand/logo-c.svg') }}" alt="Concept C 16px" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-c.svg') }}" alt="Concept C 24px" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-c.svg') }}" alt="Concept C 48px" width="48" height="48">
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="{{ url_for('static', filename='brand/logo-c.svg') }}" alt="Concept C" width="22" height="22">
-            <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="14">
-          </div>
-        </div>
-
-        <!-- White Background Preview -->
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 14px; display: flex; align-items: center; justify-content: space-between; color: #0f172a;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="{{ url_for('static', filename='brand/logo-c.svg') }}" alt="Concept C 16px" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-c.svg') }}" alt="Concept C 24px" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-c.svg') }}" alt="Concept C 48px" width="48" height="48">
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="{{ url_for('static', filename='brand/logo-c.svg') }}" alt="Concept C" width="22" height="22">
-            <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="SENTINEL" height="14">
-          </div>
-        </div>
+    <!-- Decorative Fingerprint Motif Display -->
+    <div style="margin-top: 16px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; background: var(--surface-raised); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <b style="color: var(--text-primary); font-size: 13px;">Decorative Procedural Fingerprint Motif</b>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Wavy concentric ridges clipped to triangle geometry (&ge; 96px, 6-8% opacity).</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 24px;">
+        <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96" style="margin: 0;">
       </div>
     </div>
   </div>
 </section>
 
-<!-- 2. DENSE SORTABLE TABLE WITH SEVERITY RAILS -->
+<!-- 2. DENSE TELEMETRY DATA TABLE (Exactly 32px Rows, Centered Cells, Right-Aligned Action) -->
 <section class="card" style="margin-bottom: 24px;">
   <div class="card-header-bar">
     <div class="card-header-title">
-      <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-filter"></use></svg>
-      Dense Sortable Table Specification (28–32px Row Height &bull; Sticky Header)
+      <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-database"></use></svg>
+      Dense Telemetry Data Table Specification
     </div>
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="score-badge" title="Fleet Integrity Index">99%</span>
-    </div>
+    <span class="badge info">32PX ROWS &bull; 24PX BUTTONS</span>
   </div>
-
-  <div style="overflow-x: auto;">
-    <table class="dense-table">
+  <div style="overflow-x: auto; width: 100%;">
+    <table class="dense-table" style="width: 100%;">
       <thead>
         <tr>
-          <th style="width: 32px;"><input type="checkbox" aria-label="Select all rows"></th>
-          <th style="width: 100px;">Severity</th>
-          <th style="width: 110px;">Status</th>
-          <th>Target Resource Path</th>
+          <th style="width: 40px;"><input type="checkbox" aria-label="Select all"></th>
+          <th style="width: 110px;">Severity</th>
+          <th style="width: 100px;">Status</th>
+          <th>File Path Target</th>
           <th style="width: 140px;">Host Instance</th>
-          <th style="width: 110px;">Trigger Signal</th>
+          <th style="width: 120px;">Behavioral Signals</th>
           <th class="num-col" style="width: 80px;">PID</th>
-          <th class="num-col" style="width: 130px;">Detection Time</th>
+          <th class="num-col" style="width: 90px;">Time</th>
+          <th class="action-col">Action</th>
         </tr>
       </thead>
       <tbody>
         <tr class="sev-rail-critical">
           <td><input type="checkbox" aria-label="Select alert"></td>
-          <td>
-            <span class="badge critical">
-              <span class="dot-critical"></span>
-              CRITICAL
-            </span>
-          </td>
+          <td><span class="badge critical"><span class="dot-critical"></span>CRITICAL</span></td>
           <td><span class="badge status-open">OPEN</span></td>
-          <td><code style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">/etc/ssh/authorized_keys</code></td>
-          <td><span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">sec-gateway-01</span></td>
-          <td><span style="font-size: 11px; font-weight: 600; color: var(--danger);">[DECOY, SPEED]</span></td>
-          <td class="num-col">4821</td>
+          <td><code style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">/etc/pam.d/common-auth</code></td>
+          <td><span style="color: var(--text-muted); font-size: 12px;">prod-sec-gw-01</span></td>
+          <td><span class="badge status-open" style="font-size: 10px;">[DECOY]</span></td>
+          <td class="num-col">1042</td>
           <td class="num-col">12:04:18</td>
+          <td class="action-col"><a href="#" class="btn-inspect">Inspect &rarr;</a></td>
         </tr>
         <tr class="sev-rail-high">
           <td><input type="checkbox" aria-label="Select alert"></td>
           <td><span class="badge high">HIGH</span></td>
           <td><span class="badge status-open">OPEN</span></td>
           <td><code style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">/etc/vault.d/vault.hcl</code></td>
-          <td><span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">auth-vault-prod</span></td>
-          <td><span style="font-size: 11px; font-weight: 600; color: var(--sev-high);">[SPEED]</span></td>
+          <td><span style="color: var(--text-muted); font-size: 12px;">auth-vault-prod</span></td>
+          <td><span class="badge status-open" style="font-size: 10px;">[SPEED]</span></td>
           <td class="num-col">5102</td>
           <td class="num-col">12:02:40</td>
+          <td class="action-col"><a href="#" class="btn-inspect">Inspect &rarr;</a></td>
         </tr>
         <tr class="sev-rail-medium">
           <td><input type="checkbox" aria-label="Select alert"></td>
           <td><span class="badge medium">MEDIUM</span></td>
           <td><span class="badge status-approved">APPROVED</span></td>
           <td><code style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">/var/www/production/index.html</code></td>
-          <td><span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">k8s-worker-node-4</span></td>
-          <td><span style="font-size: 11px; font-weight: 600; color: var(--sev-medium);">[ENTROPY]</span></td>
+          <td><span style="color: var(--text-muted); font-size: 12px;">k8s-worker-node-4</span></td>
+          <td><span class="badge status-open" style="font-size: 10px;">[ENTROPY]</span></td>
           <td class="num-col">8923</td>
           <td class="num-col">11:58:12</td>
+          <td class="action-col"><a href="#" class="btn-inspect">Inspect &rarr;</a></td>
         </tr>
         <tr class="sev-rail-low">
           <td><input type="checkbox" aria-label="Select alert"></td>
           <td><span class="badge low">LOW</span></td>
           <td><span class="badge status-acknowledged">ACK</span></td>
           <td><code style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">/etc/hosts</code></td>
-          <td><span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">db-cluster-primary</span></td>
-          <td><span style="font-size: 11px; font-weight: 600; color: var(--sev-low);">[SUSTAINED]</span></td>
+          <td><span style="color: var(--text-muted); font-size: 12px;">db-cluster-primary</span></td>
+          <td><span class="badge status-open" style="font-size: 10px;">[SUSTAINED]</span></td>
           <td class="num-col">3211</td>
           <td class="num-col">11:42:05</td>
-        </tr>
-        <tr class="sev-rail-info">
-          <td><input type="checkbox" aria-label="Select alert"></td>
-          <td><span class="badge info">INFO</span></td>
-          <td><span class="badge status-approved">APPROVED</span></td>
-          <td><code style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">/var/log/audit/audit.log</code></td>
-          <td><span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">backup-storage-02</span></td>
-          <td><span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">[NEW_FILE]</span></td>
-          <td class="num-col">1102</td>
-          <td class="num-col">10:15:30</td>
+          <td class="action-col"><a href="#" class="btn-inspect">Inspect &rarr;</a></td>
         </tr>
       </tbody>
     </table>
@@ -240,29 +166,15 @@
     </div>
   </section>
 
-  <!-- Skeleton Shimmer Loader -->
-  <section class="card">
-    <div class="card-header-bar">
-      <div class="card-header-title">Skeleton Shimmer State</div>
-    </div>
-    <div style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
-      <div class="skeleton" style="height: 14px; width: 60%;"></div>
-      <div class="skeleton" style="height: 14px; width: 90%;"></div>
-      <div class="skeleton" style="height: 14px; width: 45%;"></div>
-    </div>
-  </section>
-
   <!-- Empty State Specification -->
   <section class="card">
     <div class="card-header-bar">
       <div class="card-header-title">Empty Feed State</div>
     </div>
     <div class="empty-state" style="padding: 24px;">
-      <div class="empty-icon">
-        <svg class="icon icon-lg"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-check"></use></svg>
-      </div>
+      <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96">
       <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">Zero Open Integrity Alerts</div>
-      <div style="font-size: 12px; margin-top: 4px;">All watched files match golden cryptographic baseline hashes.</div>
+      <div style="font-size: 12px; margin-top: 4px;">All watched files match golden baseline hashes.</div>
     </div>
   </section>
 </div>

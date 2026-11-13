@@ -5,30 +5,43 @@
 <section class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
     <h2>Alert #{{ alert.id }} Overview</h2>
-    <div>
+    <div style="display: flex; gap: 8px;">
       <span class="badge {{ alert.severity }}">{{ alert.severity }}</span>
       <span class="badge status-{{ alert.status }}">{{ alert.status }}</span>
     </div>
   </div>
 
-  <dl>
-    <dt>Target Path</dt><dd style="font-family: var(--font-code);">{{ alert.path }}</dd>
-    <dt>Host ID</dt><dd>{{ alert.host_id }}</dd>
-    <dt>Root ID</dt><dd>{{ alert.root_id }}</dd>
-    <dt>Change Kinds</dt><dd>{{ alert.kinds | join(', ') }}</dd>
-    <dt>Behavioral Signals</dt>
-    <dd>
+  <dl style="display: grid; grid-template-columns: 160px 1fr; gap: 8px 16px; margin: 0;">
+    <dt style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Target Path</dt>
+    <dd style="margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); word-break: break-all;">{{ alert.path }}</dd>
+
+    <dt style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Host ID</dt>
+    <dd style="margin: 0; color: var(--text-muted); font-size: 12px;">{{ alert.host_id }}</dd>
+
+    <dt style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Root ID</dt>
+    <dd style="margin: 0; color: var(--text-muted); font-size: 12px;">{{ alert.root_id }}</dd>
+
+    <dt style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Change Kinds</dt>
+    <dd style="margin: 0; color: var(--text-muted); font-size: 12px;">{{ alert.kinds | join(', ') }}</dd>
+
+    <dt style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Behavioral Signals</dt>
+    <dd style="margin: 0;">
       {% if alert.signals %}
-        <span style="color: #ff4444; font-weight: 700;">{{ alert.signals | join(', ') }}</span>
+        <span style="color: var(--danger); font-weight: 700; font-size: 12px;">{{ alert.signals | join(', ') }}</span>
       {% else %}
         <span class="muted">None (Static Integrity Anomaly)</span>
       {% endif %}
     </dd>
-    <dt>Summary</dt><dd style="color: #ffffff; font-weight: 500; font-size: 14px;">{{ alert.summary }}</dd>
-    <dt>Event Count</dt><dd>{{ alert.count }}</dd>
+
+    <dt style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Summary</dt>
+    <dd style="margin: 0; color: var(--text-primary); font-weight: 500; font-size: 13px;">{{ alert.summary }}</dd>
+
+    <dt style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Event Count</dt>
+    <dd style="margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">{{ alert.count }}</dd>
+
     {% if alert.resolution %}
-      <dt>Resolution</dt>
-      <dd class="ok">
+      <dt style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Resolution</dt>
+      <dd style="margin: 0; color: var(--ok); font-weight: 600; font-size: 12px;">
         {{ alert.status | upper }} by <b>{{ alert.resolution.actor }}</b>
         {% if alert.resolution.note %} — <i>"{{ alert.resolution.note }}"</i>{% endif %}
       </dd>
@@ -36,30 +49,30 @@
   </dl>
 
   {% if alert.status == 'open' %}
-  <div style="margin-top: 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+  <div style="margin-top: 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
     <!-- Approve Form & Trigger Button -->
     <form id="approve-form" action="{{ url_for('resolve_alert_route', alert_id=alert.id, action='approve') }}" method="POST" style="margin: 0;">
       <input type="hidden" name="actor" value="dashboard-admin">
-      <button type="button" id="approve-trigger-btn" onclick="openApproveModal()" style="background: var(--ok); color: #000; font-weight: 700; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+      <button type="button" id="approve-trigger-btn" onclick="openApproveModal()" style="background: var(--ok); color: var(--surface-bg); font-weight: 600; border: none; padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
         &check; Approve (Update Baseline)
       </button>
     </form>
 
     <!-- Reject Container (Lightweight Inline Swap, No Full-Page Dialog) -->
     <div id="reject-container" style="display: inline-flex; align-items: center;">
-      <button id="reject-initial-btn" type="button" onclick="showRejectConfirm()" style="background: var(--bad); color: #fff; font-weight: 700; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+      <button id="reject-initial-btn" type="button" onclick="showRejectConfirm()" style="background: var(--danger); color: var(--text-primary); font-weight: 600; border: none; padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
         &cross; Reject (Keep Drift / Revert)
       </button>
 
       <div id="reject-inline-confirm" style="display: none; align-items: center; gap: 8px;">
-        <span style="color: #ff8888; font-size: 13px; font-weight: 600;">Revert to baseline?</span>
+        <span style="color: var(--danger); font-size: 12px; font-weight: 600;">Revert to baseline?</span>
         <form id="reject-form" action="{{ url_for('resolve_alert_route', alert_id=alert.id, action='reject') }}" method="POST" style="margin: 0; display: inline;">
           <input type="hidden" name="actor" value="dashboard-admin">
-          <button type="submit" style="background: var(--bad); color: #fff; font-weight: 700; border: none; padding: 9px 14px; border-radius: 6px; cursor: pointer; box-shadow: 0 0 10px rgba(255,42,75,0.4);">
+          <button type="submit" style="background: var(--danger); color: var(--text-primary); font-weight: 600; border: none; padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px;">
             &cross; Yes, Reject &amp; Revert
           </button>
         </form>
-        <button type="button" onclick="hideRejectConfirm()" style="background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+        <button type="button" onclick="hideRejectConfirm()" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px;">
           Cancel
         </button>
       </div>
@@ -67,27 +80,27 @@
   </div>
 
   <!-- Strong Confirmation Modal for Approve -->
-  <div id="approve-modal" style="display: none; position: fixed; inset: 0; background: rgba(3, 5, 8, 0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: var(--card); border: 1px solid rgba(0, 255, 159, 0.4); border-radius: 12px; width: 100%; max-width: 520px; padding: 28px; box-shadow: 0 0 40px rgba(0, 255, 159, 0.15);">
+  <div id="approve-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-        <span style="font-size: 24px;">⚠️</span>
+        <svg class="icon icon-lg" style="color: var(--sev-high);"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-alert-triangle"></use></svg>
         <div>
-          <div style="font-family: var(--font-code); font-size: 11px; color: var(--warn); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">Security Confirmation</div>
-          <h3 style="margin: 2px 0 0; font-size: 18px; color: #fff;">Confirm Baseline Update</h3>
+          <div style="font-size: 11px; color: var(--sev-high); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">Security Confirmation</div>
+          <h3 style="margin: 2px 0 0; font-size: 16px; color: var(--text-primary);">Confirm Baseline Update</h3>
         </div>
       </div>
-      <p style="color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.5; margin-bottom: 12px;">
+      <p style="color: var(--text-primary); font-size: 13px; font-weight: 600; line-height: 1.5; margin-bottom: 12px;">
         Are you sure you want to approve this change? This will update the Golden Baseline.
       </p>
-      <div style="color: var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 24px; background: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
-        Target: <code style="color: #fff; font-family: var(--font-code);">{{ alert.path }}</code><br>
+      <div style="color: var(--text-muted); font-size: 12px; line-height: 1.5; margin-bottom: 20px; background: var(--surface-raised); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+        Target: <code style="color: var(--text-primary); font-family: var(--font-mono);">{{ alert.path }}</code><br>
         Approving permanently records this file state as legitimate. Future scans will not flag this content.
       </div>
-      <div style="display: flex; justify-content: flex-end; gap: 12px;">
-        <button type="button" onclick="closeApproveModal()" style="background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 10px 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" onclick="closeApproveModal()" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 6px 14px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-size: 12px;">
           Cancel
         </button>
-        <button type="button" onclick="document.getElementById('approve-form').submit()" style="background: var(--ok); color: #000; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; box-shadow: 0 0 16px rgba(0,255,159,0.3);">
+        <button type="button" onclick="document.getElementById('approve-form').submit()" style="background: var(--ok); color: var(--surface-bg); border: none; padding: 6px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-size: 12px;">
           &check; Yes, Approve &amp; Update Baseline
         </button>
       </div>
@@ -98,9 +111,9 @@
 </section>
 
 <section class="card">
-  <h2>Cryptographic & Content Evidence</h2>
+  <h2>Cryptographic &amp; Content Evidence</h2>
   {% if latest_diff %}
-    <div style="margin-bottom: 8px; font-size: 13px; color: var(--muted);">Unified Diff (Old &rarr; New):</div>
+    <div style="margin-bottom: 8px; font-size: 12px; color: var(--text-muted);">Unified Diff (Old &rarr; New):</div>
     <div id="diff-box" class="diff-container"></div>
     {% if diff_truncated %}
       <p class="muted" style="margin-top: 6px; font-size: 11px;">[Diff was truncated for length]</p>
@@ -184,4 +197,3 @@ if (approveModal) {
 }
 </script>
 {% endblock %}
-

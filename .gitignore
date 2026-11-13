@@ -24,3 +24,6 @@ brand_src/
 # Demo Fixture Directories (recreated by demo setup workflows)
 ssh_keys/
 web_root/
+sentinel/server/static/brand/logo-a.svg
+sentinel/server/static/brand/logo-b.svg
+sentinel/server/static/brand/logo-c.svg
