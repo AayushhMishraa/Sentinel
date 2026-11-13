@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_brand.html" as brand %}
 {% block title %}Sentinel{% endblock %}
 {% block content %}
 <div id="latest-alert-meta"
@@ -40,6 +41,9 @@
     <h2>Live Change Velocity (Events / Hour)</h2>
   </div>
   <div style="width: 100%; height: 110px; position: relative;">
+    {% if not alerts %}
+      <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-faint); font-size: 12px; font-weight: 500;">No events</div>
+    {% else %}
     <svg viewBox="0 0 600 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: hidden;">
       <defs>
         <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
@@ -53,6 +57,7 @@
       <path d="{{ chart_area_path }}" fill="url(#chart-grad)" />
       <path d="{{ chart_line_path }}" fill="none" stroke="var(--accent)" stroke-width="2" />
     </svg>
+    {% endif %}
   </div>
 </section>
 
@@ -81,7 +86,7 @@
   </div>
   {% if not alerts %}
     <div class="empty-state">
-      <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96">
+      {{ brand.brand_fingerprint(96) }}
       <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">No open alerts.</div>
     </div>
   {% else %}

@@ -243,6 +243,33 @@ a:hover {
   color: var(--text-muted);
 }
 
+.search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-primary);
+  transition: background var(--dur-fast);
+}
+
+.search-item:hover,
+.search-item.search-item-active {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.search-group-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  padding: 8px 10px 4px 10px;
+}
+
 .host-selector-badge {
   display: flex;
   align-items: center;
@@ -415,13 +442,23 @@ h3 {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-faint);
-  position: sticky;
-  top: var(--topbar-h, 48px);
-  z-index: 10;
+  position: static;
   box-sizing: border-box;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Tables inside cards have NO sticky header */
+.card .dense-table th {
+  position: static;
+}
+
+/* Only the main Alerts table header sticks at top: 0 of its scroll container */
+#alerts-feed-section .dense-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .dense-table td {

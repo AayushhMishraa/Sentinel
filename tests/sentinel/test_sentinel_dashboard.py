@@ -147,4 +147,69 @@ def test_no_concept_references_in_served_pages(dashboard_client):
         assert "Concept C" not in text, f"Route {r} contains 'Concept C'"
 
 
+def test_api_v1_search_empty_query(dashboard_client):
+    """Search endpoint with empty query returns empty results."""
+    client, _ = dashboard_client
+    resp = client.get("/api/v1/search?q=")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["query"] == ""
+    assert data["total"] == 0
+    assert data["alerts"] == []
+    assert data["hosts"] == []
+    assert data["paths"] == []
+
+
+def test_api_v1_search_no_match(dashboard_client):
+    """Search endpoint with unmatched query returns total=0."""
+    client, _ = dashboard_client
+    resp = client.get("/api/v1/search?q=xyz_nonexistent_token_12345")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["total"] == 0
+    assert len(data["alerts"]) == 0
+    assert len(data["hosts"]) == 0
+    assert len(data["paths"]) == 0
+
+
+def test_api_v1_search_xss_safety(dashboard_client):
+    """Search query with XSS payloads executes safely without injection."""
+    client, _ = dashboard_client
+    xss_payload = "<script>alert('xss')</script>\"'--;"
+    resp = client.get(f"/api/v1/search?q={xss_payload}")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["query"] == xss_payload
+    assert data["total"] == 0
+
+
+def test_api_v1_search_long_query(dashboard_client):
+    """Search endpoint handles long queries safely without blowing up."""
+    client, _ = dashboard_client
+    long_q = "A" * 4000
+    resp = client.get(f"/api/v1/search?q={long_q}")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["total"] == 0
+
+
+def test_api_v1_search_matches(dashboard_client):
+    """Search endpoint finds seeded alert by path, host, or severity."""
+    client, repo = dashboard_client
+    # Search by path
+    resp = client.get("/api/v1/search?q=sshd_config")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["total"] >= 1
+    assert any("sshd_config" in a["path"] for a in data["alerts"])
+
+    # Search by host_id
+    resp_host = client.get("/api/v1/search?q=box-alpha")
+    assert resp_host.status_code == 200
+    data_host = resp_host.get_json()
+    assert data_host["total"] >= 1
+    assert any("box-alpha" in a["host_id"] for a in data_host["alerts"])
+
+
+
 

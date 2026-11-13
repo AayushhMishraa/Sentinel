@@ -89,6 +89,11 @@ def run_check_1_and_2_and_3(app, client):
                 continue
             errors.append(f"Route {route} contains external URL: {url}")
 
+        # Check no served page contains Concept A/B/C
+        for c_text in ["Concept A", "Concept B", "Concept C"]:
+            if c_text in html:
+                errors.append(f"Route {route} contains deprecated logo text: {c_text}")
+
     # Check all static URLs collected from served HTML return 200
     for s_url in sorted(static_urls):
         s_resp = client.get(s_url)
@@ -111,6 +116,11 @@ def run_check_1_and_2_and_3(app, client):
                 tpath = os.path.join(root, fname)
                 with open(tpath, "r", encoding="utf-8") as tf:
                     tcontent = tf.read()
+                # Fail if any template references brand/*.svg through <img> (except favicon)
+                for m in re.finditer(r'<img\b[^>]*?\bsrc=["\']([^"\']+)["\']', tcontent, re.IGNORECASE):
+                    src = m.group(1)
+                    if "brand/" in src and "favicon" not in src:
+                        errors.append(f"Template {fname} references brand SVG through <img>: {src}")
                 for tag_pattern in [
                     r'<img\b[^>]*?\bsrc=["\']([^"\']+)["\']',
                     r'<use\b[^>]*?\bhref=["\']([^"\']+)["\']',
@@ -392,6 +402,9 @@ def run_static_checks():
             errors.append(".app-body missing min-width: 0 in style.css")
         if "main {" not in sc or "min-width: 0" not in sc:
             errors.append("main missing min-width: 0 in style.css")
+        # Ensure tables inside cards have NO sticky header (position: static)
+        if ".card .dense-table th" not in sc or "position: static" not in sc:
+            errors.append(".card .dense-table th missing position: static in style.css")
 
     # (c) No box-shadow blur > 8px or drop-shadow outside popovers
     shadow_regex = re.compile(r"box-shadow:\s*([^;]+);")

@@ -1,3 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 135 24" fill="currentColor" role="img" aria-label="Sentinel">
-  <text x="0" y="18" font-family="'Inter', -apple-system, sans-serif" font-weight="600" font-size="15" letter-spacing="0.08em" fill="currentColor">SENTINEL</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6620 684" fill="currentColor" role="img" aria-label="Sentinel">
+  <g transform="translate(72.0, 678.0) scale(1, -1) skewX(-8)">
+    <path d="M610 0C794 0 875 68 875 196C875 316 793 376 628 376H358C231 376 160 386 160 471C160 542 211 577 313 577H792L862 669H321C137 669 55 599 55 478C55 361 132 296 303 296H573C697 296 771 285 771 197C771 126 720 91 618 91H93L22 0Z" transform="translate(0, 0)" /><path d="M704 0 775 91H168V296H677L739 376H168V577H699L770 669H60V0Z" transform="translate(984, 0)" /><path d="M693 14C710 -3 724 -6 739 -6C771 -6 800 14 800 62V669H701V143L164 657C147 674 132 678 117 678C85 678 57 658 57 610V0H155V528Z" transform="translate(1846, 0)" /><path d="M464 0V577H776L847 669H73L0 577H355V0Z" transform="translate(2782, 0)" /><path d="M170 0V669H62V0Z" transform="translate(3709, 0)" /><path d="M693 14C710 -3 724 -6 739 -6C771 -6 800 14 800 62V669H701V143L164 657C147 674 132 678 117 678C85 678 57 658 57 610V0H155V528Z" transform="translate(4023, 0)" /><path d="M704 0 775 91H168V296H677L739 376H168V577H699L770 669H60V0Z" transform="translate(4959, 0)" /><path d="M655 0 726 91H168V669H60V0Z" transform="translate(5821, 0)" />
+  </g>
 </svg>

@@ -1,3 +1,4 @@
+{% import "_brand.html" as brand %}
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
@@ -77,10 +78,10 @@
 <div class="app-shell">
   <!-- Enterprise Sidebar Rail (Navy Blue Chrome across themes so logo remains white) -->
   <aside class="app-sidebar" id="app-sidebar">
-    <div class="sidebar-header">
-      <img src="{{ url_for('static', filename='brand/logo.svg') }}" alt="Sentinel Mark" width="22" height="22">
+    <div class="sidebar-header" style="color: var(--logo-color);">
+      {{ brand.brand_logo(22) }}
       <div class="hide-collapsed" style="display: flex; align-items: center;">
-        <img src="{{ url_for('static', filename='brand/sentinel-wordmark.svg') }}" alt="Sentinel" height="15">
+        {{ brand.brand_wordmark(15) }}
       </div>
     </div>
 
@@ -180,15 +181,20 @@
   </div>
 </div>
 
-<!-- Non-Blocking Command Palette Dialog (Ctrl+K) -->
+<!-- Non-Blocking Command Palette Dialog (Ctrl+K, /) -->
 <div id="cmd-palette-dialog" class="modal-backdrop" style="display: none;" onclick="if(event.target===this)closeCmdPalette();">
-  <div class="modal-card" style="max-width: 480px;">
-    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; margin-bottom: 12px;">
+  <div class="modal-card" style="max-width: 580px; width: 100%; border-radius: var(--radius-md); box-shadow: var(--shadow-popover); background: var(--surface-bg); border: 1px solid var(--border-strong); padding: 16px;">
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; margin-bottom: 8px;">
       <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-search"></use></svg>
-      <input type="text" id="cmd-palette-input" placeholder="Jump to path, host, or action... (Esc to close)" style="flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--text-primary); font-family: var(--font-sans);">
+      <input type="text" id="cmd-palette-input" placeholder="Search alerts, hosts, paths... (Esc to close, / to focus)" autocomplete="off" spellcheck="false" style="flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--text-primary); font-family: var(--font-sans);">
+      <span id="search-count-badge" class="badge info" style="display: none; font-size: 10px;">0 results</span>
       <kbd style="font-family: var(--font-mono); font-size: 10px; background: var(--surface-hover); border: 1px solid var(--border-subtle); border-radius: 3px; padding: 2px 6px; color: var(--text-muted);">ESC</kbd>
     </div>
-    <div style="font-size: 11px; color: var(--text-faint); padding: 4px 0;">Quick links: <span style="color: var(--accent);">/</span> (Alerts), <span style="color: var(--accent);">/assets</span> (Fleet), <span style="color: var(--accent);">/ui-kit</span> (Design System)</div>
+    <div id="cmd-palette-results" style="max-height: 360px; overflow-y: auto; padding: 4px 0;"></div>
+    <div style="border-top: 1px solid var(--border-subtle); margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint);">
+      <span><b>&uarr;&darr;</b> navigate &bull; <b>&crarr;</b> open / filter</span>
+      <span>Press <b>/</b> anywhere to search</span>
+    </div>
   </div>
 </div>
 
@@ -237,14 +243,24 @@ function updateThemeSwitcherUI() {
 }
 document.addEventListener('DOMContentLoaded', updateThemeSwitcherUI);
 
-// Non-blocking Command Palette
+// Non-blocking Command Palette & Live Search
+let searchDebounceTimer = null;
+let currentSearchItems = [];
+let activeSearchIndex = -1;
+
 function openCmdPalette() {
   const p = document.getElementById('cmd-palette-dialog');
   if (p) {
     p.style.display = 'flex';
     setTimeout(function() {
       const input = document.getElementById('cmd-palette-input');
-      if (input) input.focus();
+      if (input) {
+        input.focus();
+        input.select();
+        if (input.value.trim()) {
+          performSearch(input.value.trim());
+        }
+      }
     }, 50);
   }
 }
@@ -252,14 +268,224 @@ function openCmdPalette() {
 function closeCmdPalette() {
   const p = document.getElementById('cmd-palette-dialog');
   if (p) p.style.display = 'none';
+  activeSearchIndex = -1;
 }
+
+function updateSearchHighlight() {
+  for (let i = 0; i < currentSearchItems.length; i++) {
+    if (i === activeSearchIndex) {
+      currentSearchItems[i].el.classList.add('search-item-active');
+      currentSearchItems[i].el.scrollIntoView({ block: 'nearest' });
+    } else {
+      currentSearchItems[i].el.classList.remove('search-item-active');
+    }
+  }
+}
+
+function performSearch(query) {
+  const resultsContainer = document.getElementById('cmd-palette-results');
+  const countBadge = document.getElementById('search-count-badge');
+  if (!resultsContainer) return;
+
+  if (!query) {
+    resultsContainer.textContent = '';
+    currentSearchItems = [];
+    activeSearchIndex = -1;
+    if (countBadge) countBadge.style.display = 'none';
+    return;
+  }
+
+  fetch('/api/v1/search?q=' + encodeURIComponent(query))
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      resultsContainer.textContent = '';
+      currentSearchItems = [];
+      activeSearchIndex = -1;
+
+      if (countBadge) {
+        countBadge.style.display = 'inline-block';
+        countBadge.textContent = data.total + (data.total === 1 ? ' result' : ' results');
+      }
+
+      if (!data.total || data.total === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.style.cssText = 'padding: 24px 12px; text-align: center; color: var(--text-faint); font-size: 12px;';
+        emptyDiv.textContent = 'No results found for "' + query + '"';
+        resultsContainer.appendChild(emptyDiv);
+        return;
+      }
+
+      function addGroup(title, items, renderFn) {
+        if (!items || items.length === 0) return;
+        const grpTitle = document.createElement('div');
+        grpTitle.className = 'search-group-title';
+        grpTitle.textContent = title + ' (' + items.length + ')';
+        resultsContainer.appendChild(grpTitle);
+
+        items.forEach(function(item) {
+          const itemEl = document.createElement('div');
+          itemEl.className = 'search-item';
+          renderFn(item, itemEl);
+
+          itemEl.addEventListener('click', function() {
+            if (item.url) window.location.href = item.url;
+          });
+          resultsContainer.appendChild(itemEl);
+          currentSearchItems.push({ el: itemEl, url: item.url });
+        });
+      }
+
+      // 1. Alerts
+      addGroup('Alerts', data.alerts, function(alert, el) {
+        const left = document.createElement('div');
+        left.style.cssText = 'display: flex; align-items: center; gap: 8px; overflow: hidden;';
+
+        const sevBadge = document.createElement('span');
+        sevBadge.className = 'badge ' + (alert.severity || 'info').toLowerCase();
+        sevBadge.textContent = (alert.severity || 'INFO').toUpperCase();
+
+        const pathSpan = document.createElement('span');
+        pathSpan.style.cssText = 'font-family: var(--font-mono); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;';
+        pathSpan.textContent = alert.path || ('Alert #' + alert.id);
+
+        left.appendChild(sevBadge);
+        left.appendChild(pathSpan);
+
+        const right = document.createElement('div');
+        right.style.cssText = 'display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-faint);';
+        const hostSpan = document.createElement('span');
+        hostSpan.textContent = alert.host_id || '';
+        right.appendChild(hostSpan);
+
+        el.appendChild(left);
+        el.appendChild(right);
+      });
+
+      // 2. Hosts
+      addGroup('Hosts', data.hosts, function(host, el) {
+        const left = document.createElement('div');
+        left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+        const hostBadge = document.createElement('span');
+        hostBadge.className = 'badge online';
+        hostBadge.textContent = 'HOST';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.style.fontWeight = '500';
+        nameSpan.textContent = host.name || host.host_id;
+
+        left.appendChild(hostBadge);
+        left.appendChild(nameSpan);
+
+        const right = document.createElement('div');
+        right.style.cssText = 'font-size: 11px; color: var(--text-faint); font-family: var(--font-mono);';
+        right.textContent = host.agent_version || host.status || '';
+
+        el.appendChild(left);
+        el.appendChild(right);
+      });
+
+      // 3. Monitored Paths
+      addGroup('Monitored Paths', data.paths, function(pathItem, el) {
+        const left = document.createElement('div');
+        left.style.cssText = 'display: flex; align-items: center; gap: 8px; overflow: hidden;';
+        const pathBadge = document.createElement('span');
+        pathBadge.className = 'badge info';
+        pathBadge.textContent = 'PATH';
+
+        const pSpan = document.createElement('span');
+        pSpan.style.cssText = 'font-family: var(--font-mono); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;';
+        pSpan.textContent = pathItem.path || pathItem.id;
+
+        left.appendChild(pathBadge);
+        left.appendChild(pSpan);
+
+        const right = document.createElement('div');
+        right.style.cssText = 'font-size: 11px; color: var(--text-muted);';
+        right.textContent = pathItem.mode || 'monitored';
+
+        el.appendChild(left);
+        el.appendChild(right);
+      });
+
+      if (currentSearchItems.length > 0) {
+        activeSearchIndex = 0;
+        updateSearchHighlight();
+      }
+    })
+    .catch(function(err) {
+      console.error('Search request failed', err);
+    });
+}
+
+function applyAlertsTableFilter(query) {
+  const rows = document.querySelectorAll('#alerts-feed-section table tbody tr');
+  if (!rows || rows.length === 0) return;
+  const qLower = (query || '').toLowerCase().trim();
+  rows.forEach(function(row) {
+    if (!qLower) {
+      row.style.display = '';
+    } else {
+      const text = row.textContent.toLowerCase();
+      row.style.display = text.indexOf(qLower) !== -1 ? '' : 'none';
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const input = document.getElementById('cmd-palette-input');
+  if (input) {
+    input.addEventListener('input', function(e) {
+      const val = e.target.value.trim();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(function() {
+        performSearch(val);
+      }, 150);
+    });
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (currentSearchItems.length > 0) {
+          activeSearchIndex = (activeSearchIndex + 1) % currentSearchItems.length;
+          updateSearchHighlight();
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentSearchItems.length > 0) {
+          activeSearchIndex = (activeSearchIndex - 1 + currentSearchItems.length) % currentSearchItems.length;
+          updateSearchHighlight();
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (activeSearchIndex >= 0 && activeSearchIndex < currentSearchItems.length) {
+          const target = currentSearchItems[activeSearchIndex];
+          if (target && target.url) {
+            window.location.href = target.url;
+          }
+        } else {
+          // On Alerts page, Enter with no highlighted result applies the text as a table filter
+          applyAlertsTableFilter(input.value.trim());
+          closeCmdPalette();
+        }
+      } else if (e.key === 'Escape') {
+        closeCmdPalette();
+      }
+    });
+  }
+});
 
 document.addEventListener('keydown', function(e) {
   if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
     e.preventDefault();
     openCmdPalette();
-  }
-  if (e.key === 'Escape') {
+  } else if (e.key === '/') {
+    const active = document.activeElement;
+    const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+    if (!isInput) {
+      e.preventDefault();
+      openCmdPalette();
+    }
+  } else if (e.key === 'Escape') {
     closeCmdPalette();
   }
 });

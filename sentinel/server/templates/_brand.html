@@ -1,0 +1,54 @@
+{# _brand.html: Reusable inline brand SVG macros.
+   Inlined so SVG stroke/fill inherits currentColor (--logo-color).
+   Never load these through <img> tags because <img> cannot inherit theme colors.
+#}
+
+{% macro brand_logo(size=24, class="") %}
+<svg xmlns="http://www.w3.org/2000/svg" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="miter" stroke-linecap="square" class="{{ class }}" role="img" aria-label="Sentinel Logo">
+  <path d="M12 2.2 20.5 7v10L12 21.8 3.5 17V7z"/>
+  <path d="M16 8.5H9.5V12h5v3.5H8"/>
+</svg>
+{% endmacro %}
+
+{% macro brand_wordmark(height=14, class="") %}
+<svg xmlns="http://www.w3.org/2000/svg" height="{{ height }}" viewBox="0 0 6620 684" fill="currentColor" class="{{ class }}" role="img" aria-label="Sentinel">
+  <g transform="translate(72.0, 678.0) scale(1, -1) skewX(-8)">
+    <path d="M610 0C794 0 875 68 875 196C875 316 793 376 628 376H358C231 376 160 386 160 471C160 542 211 577 313 577H792L862 669H321C137 669 55 599 55 478C55 361 132 296 303 296H573C697 296 771 285 771 197C771 126 720 91 618 91H93L22 0Z" transform="translate(0, 0)" />
+    <path d="M704 0 775 91H168V296H677L739 376H168V577H699L770 669H60V0Z" transform="translate(984, 0)" />
+    <path d="M693 14C710 -3 724 -6 739 -6C771 -6 800 14 800 62V669H701V143L164 657C147 674 132 678 117 678C85 678 57 658 57 610V0H155V528Z" transform="translate(1846, 0)" />
+    <path d="M464 0V577H776L847 669H73L0 577H355V0Z" transform="translate(2782, 0)" />
+    <path d="M170 0V669H62V0Z" transform="translate(3709, 0)" />
+    <path d="M693 14C710 -3 724 -6 739 -6C771 -6 800 14 800 62V669H701V143L164 657C147 674 132 678 117 678C85 678 57 658 57 610V0H155V528Z" transform="translate(4023, 0)" />
+    <path d="M704 0 775 91H168V296H677L739 376H168V577H699L770 669H60V0Z" transform="translate(4959, 0)" />
+    <path d="M655 0 726 91H168V669H60V0Z" transform="translate(5821, 0)" />
+  </g>
+</svg>
+{% endmacro %}
+
+{% macro brand_lockup(mark_size=20, wordmark_height=14, class="") %}
+<span class="brand-lockup {{ class }}" style="display: inline-flex; align-items: center; gap: 8px; color: inherit;">
+  {{ brand_logo(mark_size) }}
+  {{ brand_wordmark(wordmark_height) }}
+</span>
+{% endmacro %}
+
+{% macro brand_fingerprint(size=96, class="empty-fingerprint") %}
+<svg xmlns="http://www.w3.org/2000/svg" width="{{ size }}" height="{{ size }}" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ class }}" role="img" aria-label="Decorative Fingerprint Motif">
+  <defs>
+    <clipPath id="motif-triangle-{{ size }}">
+      <polygon points="60,8 112,112 8,112" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#motif-triangle-{{ size }})">
+    <path d="M 50.3,55.6 L 52.7,55.0 L 54.8,54.7 L 56.6,54.3 L 58.2,53.4 L 60.0,52.1 L 62.1,51.2 L 64.4,51.1 L 66.4,52.2 L 68.0,54.1 L 68.9,56.4 L 69.6,58.6 L 70.5,60.6 L 71.6,62.6 L 72.8,65.0 L 73.5,67.7 L 73.2,70.5 L 71.9,72.9 L 69.7,74.4 L 67.3,75.0 L 65.2,75.3 L 63.4,75.7 L 61.8,76.6 L 60.0,77.9 L 57.9,78.8 L 55.6,78.9 L 53.6,77.8 L 52.0,75.9 L 51.1,73.6" />
+    <path d="M 46.5,52.0 L 49.5,50.6 L 52.3,49.8 L 54.9,48.9 L 57.3,47.7 L 60.0,46.4 L 63.0,45.5 L 66.1,45.7 L 68.9,47.2 L 71.2,49.7 L 72.7,52.7 L 73.9,55.7 L 75.2,58.7 L 76.5,61.6 L 77.8,65.0 L 78.4,68.7 L 77.9,72.5 L 76.2,75.8 L 73.5,78.0 L 70.5,79.4 L 67.7,80.2 L 65.1,81.1 L 62.7,82.3 L 60.0,83.6 L 57.0,84.5 L 53.9,84.3 L 51.1,82.8 L 48.8,80.3 L 47.3,77.3" />
+    <path d="M 42.6,48.3 L 46.3,46.2 L 49.8,44.8 L 53.2,43.5 L 56.5,42.0 L 60.0,40.6 L 63.9,39.8 L 67.8,40.3 L 71.4,42.2 L 74.4,45.3 L 76.6,49.0 L 78.3,52.9 L 79.9,56.7 L 81.5,60.6 L 82.8,65.0 L 83.4,69.7 L 82.6,74.5 L 80.5,78.6 L 77.4,81.7 L 73.7,83.8 L 70.2,85.2 L 66.8,86.5 L 63.5,88.0 L 60.0,89.4 L 56.1,90.2 L 52.2,89.7 L 48.6,87.8 L 45.6,84.7 L 43.4,81.0" />
+    <path d="M 38.8,44.6 L 43.1,41.8 L 47.3,39.8 L 51.5,38.1 L 55.6,36.4 L 60.0,34.9 L 64.7,34.2 L 69.5,34.9 L 73.9,37.2 L 77.6,40.9 L 80.4,45.3 L 82.6,50.0 L 84.6,54.7 L 86.4,59.7 L 87.8,65.0 L 88.3,70.7 L 87.3,76.4 L 84.9,81.5 L 81.2,85.4 L 76.9,88.2 L 72.7,90.2 L 68.5,91.9 L 64.4,93.6 L 60.0,95.1 L 55.3,95.8 L 50.5,95.1 L 46.1,92.8 L 42.4,89.1 L 39.6,84.7" />
+    <path d="M 35.0,40.9 L 39.8,37.4 L 44.8,34.8 L 49.8,32.7 L 54.7,30.7 L 60.0,29.1 L 65.6,28.5 L 71.2,29.5 L 76.4,32.2 L 80.8,36.5 L 84.2,41.6 L 86.9,47.1 L 89.3,52.8 L 91.3,58.7 L 92.8,65.0 L 93.2,71.7 L 92.0,78.4 L 89.2,84.4 L 85.0,89.1 L 80.2,92.6 L 75.2,95.2 L 70.2,97.3 L 65.3,99.3 L 60.0,100.9 L 54.4,101.5 L 48.8,100.5 L 43.6,97.8 L 39.2,93.5 L 35.8,88.4" />
+    <path d="M 31.2,37.2 L 36.6,33.0 L 42.3,29.8 L 48.1,27.3 L 53.9,25.0 L 60.0,23.4 L 66.5,22.9 L 73.0,24.1 L 78.9,27.3 L 84.0,32.1 L 88.1,37.9 L 91.3,44.2 L 94.0,50.8 L 96.2,57.7 L 97.8,65.0 L 98.1,72.7 L 96.7,80.4 L 93.5,87.3 L 88.8,92.8 L 83.4,97.0 L 77.7,100.2 L 71.9,102.7 L 66.1,105.0 L 60.0,106.6 L 53.5,107.1 L 47.0,105.9 L 41.1,102.7 L 36.0,97.9 L 31.9,92.1" />
+    <path d="M 27.3,33.5 L 33.4,28.6 L 39.8,24.9 L 46.3,21.9 L 53.0,19.4 L 60.0,17.6 L 67.3,17.2 L 74.7,18.7 L 81.4,22.3 L 87.2,27.7 L 91.9,34.2 L 95.6,41.4 L 98.7,48.8 L 101.2,56.7 L 102.8,65.0 L 103.1,73.7 L 101.4,82.3 L 97.8,90.1 L 92.7,96.5 L 86.6,101.4 L 80.2,105.1 L 73.7,108.1 L 67.0,110.6 L 60.0,112.4 L 52.7,112.8 L 45.3,111.3 L 38.6,107.7 L 32.8,102.3 L 28.1,95.8" />
+    <path d="M 23.5,29.8 L 30.2,24.2 L 37.3,19.9 L 44.6,16.5 L 52.1,13.7 L 60.0,11.9 L 68.2,11.5 L 76.4,13.3 L 83.9,17.3 L 90.5,23.3 L 95.7,30.5 L 99.9,38.5 L 103.4,46.9 L 106.1,55.7 L 107.8,65.0 L 108.0,74.7 L 106.1,84.3 L 102.2,93.0 L 96.5,100.2 L 89.8,105.8 L 82.7,110.1 L 75.4,113.5 L 67.9,116.3 L 60.0,118.1 L 51.8,118.5 L 43.6,116.7 L 36.1,112.7 L 29.5,106.7 L 24.3,99.5" />
+    <path d="M 19.7,26.1 L 27.0,19.8 L 34.8,14.9 L 42.9,11.1 L 51.3,8.1 L 60.0,6.1 L 69.1,5.9 L 78.1,7.9 L 86.4,12.3 L 93.7,18.9 L 99.5,26.8 L 104.3,35.6 L 108.1,44.9 L 111.0,54.7 L 112.8,65.0 L 112.9,75.7 L 110.8,86.3 L 106.5,95.9 L 100.3,103.9 L 93.0,110.2 L 85.2,115.1 L 77.1,118.9 L 68.7,121.9 L 60.0,123.9 L 50.9,124.1 L 41.9,122.1 L 33.6,117.7 L 26.3,111.1 L 20.5,103.2" />
+  </g>
+</svg>
+{% endmacro %}

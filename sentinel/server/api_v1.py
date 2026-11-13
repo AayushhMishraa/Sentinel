@@ -162,3 +162,101 @@ def get_commands():
                 commands.append(dict(row))
     return jsonify({"ok": True, "commands": commands})
 
+
+@api_v1.route("/search", methods=["GET"])
+def search():
+    """Global search across alerts, hosts, and monitored paths."""
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return jsonify({"query": "", "total": 0, "alerts": [], "hosts": [], "paths": []})
+
+    repo = get_repo()
+    alerts = []
+    hosts = []
+    paths = []
+    param = f"%{q}%"
+
+    if hasattr(repo, "_get_connection"):
+        with repo._get_connection() as conn:
+            # 1. Alerts search (path, host_id, signals, status, severity, summary)
+            cur_a = conn.execute("""
+                SELECT id, host_id, path, severity, status, signals, summary
+                FROM alerts
+                WHERE path LIKE ? OR host_id LIKE ? OR signals LIKE ? OR status LIKE ? OR severity LIKE ? OR summary LIKE ?
+                ORDER BY id DESC LIMIT 8
+            """, (param, param, param, param, param, param))
+            for r in cur_a.fetchall():
+                sig = []
+                try:
+                    sig = json.loads(r["signals"]) if r["signals"] else []
+                except Exception:
+                    pass
+                alerts.append({
+                    "id": r["id"],
+                    "host_id": r["host_id"],
+                    "path": r["path"],
+                    "severity": r["severity"],
+                    "status": r["status"],
+                    "signals": sig,
+                    "summary": r["summary"],
+                    "url": f"/alerts/{r['id']}",
+                })
+
+            # 2. Hosts search (host_id, name)
+            cur_h = conn.execute("""
+                SELECT host_id, name, agent_version, status, last_seen
+                FROM hosts
+                WHERE host_id LIKE ? OR name LIKE ?
+                ORDER BY last_seen DESC LIMIT 8
+            """, (param, param))
+            for r in cur_h.fetchall():
+                hosts.append({
+                    "host_id": r["host_id"],
+                    "name": r["name"],
+                    "agent_version": r["agent_version"],
+                    "status": r["status"],
+                    "url": "/assets",
+                })
+
+    # 3. Paths search
+    engine = current_app.config.get("ENGINE")
+    configured_paths = engine.config.paths if engine and hasattr(engine, "config") and engine.config else []
+    for p in configured_paths:
+        p_id = getattr(p, "id", "")
+        p_path = getattr(p, "path", "")
+        p_mode = getattr(p, "mode", "monitor")
+        if q.lower() in p_id.lower() or q.lower() in p_path.lower() or q.lower() in p_mode.lower():
+            paths.append({
+                "id": p_id,
+                "path": p_path,
+                "mode": p_mode,
+                "url": "/assets",
+            })
+            if len(paths) >= 8:
+                break
+
+    if not paths and hasattr(repo, "_get_connection"):
+        with repo._get_connection() as conn:
+            cur_p = conn.execute("""
+                SELECT DISTINCT root_id, path FROM alerts
+                WHERE path LIKE ? OR root_id LIKE ?
+                LIMIT 8
+            """, (param, param))
+            for r in cur_p.fetchall():
+                paths.append({
+                    "id": r["root_id"],
+                    "path": r["path"],
+                    "mode": "monitored",
+                    "url": "/assets",
+                })
+
+    total = len(alerts) + len(hosts) + len(paths)
+    return jsonify({
+        "query": q,
+        "total": total,
+        "alerts": alerts,
+        "hosts": hosts,
+        "paths": paths,
+    })
+
+

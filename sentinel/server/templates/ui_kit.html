@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_brand.html" as brand %}
 {% block title %}UI Kit · Enterprise Design System{% endblock %}
 {% block breadcrumb %}Design System &bull; UI Kit{% endblock %}
 
@@ -30,12 +31,12 @@
         </div>
         <div style="background: var(--preview-dark-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-dark-text);">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="16" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="24" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="48" width="48" height="48">
+            {{ brand.brand_logo(16) }}
+            {{ brand.brand_logo(24) }}
+            {{ brand.brand_logo(48) }}
           </div>
           <div>
-            <img src="{{ url_for('static', filename='brand/logo-lockup.svg') }}" alt="Lockup" height="22">
+            {{ brand.brand_lockup(22, 14) }}
           </div>
         </div>
       </div>
@@ -47,12 +48,12 @@
         </div>
         <div style="background: var(--preview-light-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-light-text);">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="16" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="24" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="48" width="48" height="48">
+            {{ brand.brand_logo(16) }}
+            {{ brand.brand_logo(24) }}
+            {{ brand.brand_logo(48) }}
           </div>
           <div>
-            <img src="{{ url_for('static', filename='brand/logo-lockup.svg') }}" alt="Lockup" height="22">
+            {{ brand.brand_lockup(22, 14) }}
           </div>
         </div>
       </div>
@@ -64,12 +65,12 @@
         </div>
         <div style="background: var(--preview-contrast-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; display: flex; align-items: center; justify-content: space-between; color: var(--preview-contrast-text);">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="{{ url_for('static', filename='brand/logo-16.svg') }}" alt="16" width="16" height="16">
-            <img src="{{ url_for('static', filename='brand/logo-24.svg') }}" alt="24" width="24" height="24">
-            <img src="{{ url_for('static', filename='brand/logo-48.svg') }}" alt="48" width="48" height="48">
+            {{ brand.brand_logo(16) }}
+            {{ brand.brand_logo(24) }}
+            {{ brand.brand_logo(48) }}
           </div>
           <div>
-            <img src="{{ url_for('static', filename='brand/logo-lockup.svg') }}" alt="Lockup" height="22">
+            {{ brand.brand_lockup(22, 14) }}
           </div>
         </div>
       </div>
@@ -81,7 +82,7 @@
         <b style="color: var(--text-primary); font-size: 13px;">Procedural Fingerprint Motif</b>
       </div>
       <div style="display: flex; align-items: center; gap: 24px;">
-        <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96" style="margin: 0;">
+        {{ brand.brand_fingerprint(96, "empty-fingerprint") }}
       </div>
     </div>
   </div>
@@ -184,7 +185,7 @@
       <div class="card-header-title">Empty Feed State</div>
     </div>
     <div class="empty-state" style="padding: 24px;">
-      <img src="{{ url_for('static', filename='brand/fingerprint.svg') }}" class="empty-fingerprint" alt="" width="96" height="96">
+      {{ brand.brand_fingerprint(96) }}
       <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">Zero Open Integrity Alerts</div>
       <div style="font-size: 12px; margin-top: 4px;">All watched files match golden baseline hashes.</div>
     </div>
