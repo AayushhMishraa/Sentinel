@@ -342,3 +342,37 @@ class SQLiteRepository(Repository):
             conn.commit()
             return len(rows)
 
+
+def get_fleet_hosts(repo: Any, ttl: int = 90) -> Dict[str, Any]:
+    """Calculate fleet hosts, statuses, and counts using a consistent TTL."""
+    now = time.time()
+    hosts: List[Dict[str, Any]] = []
+    if repo and hasattr(repo, "_get_connection"):
+        with repo._get_connection() as conn:
+            cur = conn.execute(
+                "SELECT host_id, name, token_hash, last_seen, agent_version, status FROM hosts ORDER BY last_seen DESC"
+            )
+            for row in cur.fetchall():
+                h = dict(row)
+                last_seen_ts = float(h.get("last_seen", 0))
+                is_online = (now - last_seen_ts) < ttl
+                status_str = "online" if is_online else "offline"
+                h["is_online"] = is_online
+                h["status"] = status_str
+                h["last_seen_str"] = (
+                    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(last_seen_ts))
+                    if last_seen_ts > 0 else "never"
+                )
+                hosts.append(h)
+
+    total = len(hosts)
+    online_count = sum(1 for h in hosts if h["is_online"])
+    offline_count = total - online_count
+
+    return {
+        "hosts": hosts,
+        "total": total,
+        "online_count": online_count,
+        "offline_count": offline_count,
+    }
+

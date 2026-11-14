@@ -18,7 +18,7 @@ from typing import Optional
 from flask import Blueprint, abort, current_app, jsonify, request
 
 from sentinel.models import EventEnvelope
-from sentinel.server.repo import Repository
+from sentinel.server.repo import Repository, get_fleet_hosts
 
 api_v1 = Blueprint("api_v1", __name__, url_prefix="/api/v1")
 
@@ -100,12 +100,14 @@ def ingest_events():
 @require_token
 def list_hosts():
     repo = get_repo()
-    hosts = []
-    if hasattr(repo, "_get_connection"):
-        with repo._get_connection() as conn:
-            for row in conn.execute("SELECT * FROM hosts ORDER BY last_seen DESC"):
-                hosts.append(dict(row))
-    return jsonify({"ok": True, "hosts": hosts})
+    fleet = get_fleet_hosts(repo, ttl=90)
+    return jsonify({
+        "ok": True,
+        "hosts": fleet["hosts"],
+        "total": fleet["total"],
+        "online_count": fleet["online_count"],
+        "offline_count": fleet["offline_count"],
+    })
 
 
 @api_v1.route("/alerts", methods=["GET"])
@@ -202,21 +204,20 @@ def search():
                     "url": f"/alerts/{r['id']}",
                 })
 
-            # 2. Hosts search (host_id, name)
-            cur_h = conn.execute("""
-                SELECT host_id, name, agent_version, status, last_seen
-                FROM hosts
-                WHERE host_id LIKE ? OR name LIKE ?
-                ORDER BY last_seen DESC LIMIT 8
-            """, (param, param))
-            for r in cur_h.fetchall():
-                hosts.append({
-                    "host_id": r["host_id"],
-                    "name": r["name"],
-                    "agent_version": r["agent_version"],
-                    "status": r["status"],
-                    "url": "/assets",
-                })
+            # 2. Hosts search via unified get_fleet_hosts (TTL 90s)
+            fleet = get_fleet_hosts(repo, ttl=90)
+            for h in fleet["hosts"]:
+                if q.lower() in h["host_id"].lower() or q.lower() in h.get("name", "").lower():
+                    hosts.append({
+                        "host_id": h["host_id"],
+                        "name": h["name"],
+                        "agent_version": h.get("agent_version", "0.1.0"),
+                        "status": h["status"],
+                        "last_seen": h.get("last_seen_str", ""),
+                        "url": "/assets",
+                    })
+                    if len(hosts) >= 8:
+                        break
 
     # 3. Paths search
     engine = current_app.config.get("ENGINE")

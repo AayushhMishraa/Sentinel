@@ -23,16 +23,25 @@ from sentinel.models import Change, EventEnvelope, Meta
 from sentinel.server.repo import SQLiteRepository
 
 
+def refresh_hosts(repo_path: str) -> int:
+    repo = SQLiteRepository(repo_path)
+    now = time.time()
+    with repo._get_connection() as conn:
+        cur = conn.execute("UPDATE hosts SET last_seen = ?, status = 'online'", (now,))
+        conn.commit()
+        return cur.rowcount
+
+
 def seed(repo_path: str, reset: bool = True) -> int:
     repo = SQLiteRepository(repo_path)
 
     now = time.time()
     hosts = [
-        ("box-alpha", "ip-10-0-1-14.ec2.internal (Prod Primary)", "0.1.0-sec", True, now - 12),
-        ("prod-web-01", "web-gateway-01.us-east.aws", "0.1.0-sec", True, now - 45),
-        ("prod-web-02", "web-gateway-02.us-east.aws", "0.1.0-sec", True, now - 28),
-        ("db-replica-03", "db-replica-03.internal.lan", "0.1.0-sec", False, now - 7200),
-        ("staging-node-1", "staging-worker-01.local", "0.1.0-sec", True, now - 80),
+        ("box-alpha", "ip-10-0-1-14.ec2.internal (Prod Primary)", "0.1.0-sec", True, now),
+        ("prod-web-01", "web-gateway-01.us-east.aws", "0.1.0-sec", True, now),
+        ("prod-web-02", "web-gateway-02.us-east.aws", "0.1.0-sec", True, now),
+        ("db-replica-03", "db-replica-03.internal.lan", "0.1.0-sec", True, now),
+        ("staging-node-1", "staging-worker-01.local", "0.1.0-sec", True, now),
     ]
 
     with repo._get_connection() as conn:
@@ -53,13 +62,14 @@ def seed(repo_path: str, reset: bool = True) -> int:
         conn.commit()
 
         # 2. Seed 24 hours of hourly change events (realistic curve with burst for Live Change Velocity)
+        # Exactly maps each hour 0..23 into the 24 hourly buckets: [now - 24*3600, now]
         hourly_curve = [
             3, 2, 1, 2, 3, 5, 8, 15, 24, 38, 52, 68, 64, 72, 145, 192, 128, 78, 55, 40, 28, 18, 10, 6
         ]
         for h, count in enumerate(hourly_curve):
-            hour_start = now - (23 - h) * 3600
+            bucket_start = (now - 24 * 3600) + h * 3600
             for i in range(count):
-                ev_ts = hour_start + (i * 3500 // max(1, count))
+                ev_ts = bucket_start + 10 + (i * 3500 // max(1, count))
                 ev_id = f"change-seed-{h:02d}-{i:03d}"
                 env = EventEnvelope(
                     event_id=ev_id,
@@ -68,7 +78,7 @@ def seed(repo_path: str, reset: bool = True) -> int:
                     host_id="box-alpha" if i % 3 == 0 else ("prod-web-01" if i % 3 == 1 else "prod-web-02"),
                     ts=ev_ts,
                     severity="critical" if (h in (14, 15) and i < 5) else ("high" if h in (14, 15) else "info"),
-                    summary=f"Change event record at hour -{23-h}",
+                    summary=f"Change event record at hour bucket {h}",
                     change=Change(kinds=["modified"]),
                 )
                 cur.execute(
@@ -193,10 +203,27 @@ def main():
     parser = argparse.ArgumentParser(description="Seed realistic Sentinel demo state.")
     parser.add_argument("--repo-db", default="sentinel_repo.db", help="Path to sentinel repository sqlite database")
     parser.add_argument("--reset", action="store_true", default=True, help="Reset database before seeding (default: True)")
+    parser.add_argument("--loop", action="store_true", default=False, help="Continuously refresh host heartbeats so demo hosts stay online")
+    parser.add_argument("--interval", type=int, default=30, help="Loop refresh interval in seconds (default: 30)")
     args = parser.parse_args()
 
     repo_path = os.path.abspath(args.repo_db)
-    return seed(repo_path, reset=args.reset)
+    ret = seed(repo_path, reset=args.reset)
+    if ret != 0:
+        return ret
+
+    if args.loop:
+        print(f"Looping host heartbeat refresh every {args.interval}s (Ctrl+C stops)...")
+        try:
+            while True:
+                time.sleep(args.interval)
+                cnt = refresh_hosts(repo_path)
+                print(f"[{time.strftime('%H:%M:%S')}] Refreshed {cnt} host heartbeats to online.")
+        except KeyboardInterrupt:
+            print("\nStopped heartbeat refresh loop.")
+            return 0
+
+    return 0
 
 
 if __name__ == "__main__":

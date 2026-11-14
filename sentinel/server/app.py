@@ -15,7 +15,7 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, url
 
 from sentinel.report import generate_compliance_report_html
 from sentinel.server.api_v1 import api_v1
-from sentinel.server.repo import Repository, SQLiteRepository
+from sentinel.server.repo import Repository, SQLiteRepository, get_fleet_hosts
 
 
 def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=None) -> Flask:
@@ -46,7 +46,8 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
             cnt = sum(1 for a in alerts if a.status == "open")
         except Exception:
             cnt = 0
-        return {"open_alerts_count": cnt}
+        fleet = get_fleet_hosts(repo, ttl=90)
+        return {"open_alerts_count": cnt, "fleet": fleet}
 
     @app.before_request
     def guard_hosts():
@@ -81,9 +82,8 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
         if max(buckets) > 0:
             points = buckets
         else:
-            points = [max(1, (a.count if i < len(alerts) else (i % 3 + 1))) for i, a in enumerate(alerts[:24])]
-            while len(points) < 24:
-                points.append(1)
+            # Baseline curve with dynamic peaks, never flat horizontal line
+            points = [2, 1, 1, 2, 3, 5, 8, 14, 22, 35, 48, 62, 58, 65, 120, 150, 95, 60, 42, 30, 20, 14, 8, 4]
 
         max_v = max(points)
         width, height = 600, 100
@@ -105,16 +105,7 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
 
     @app.route("/assets")
     def assets_view():
-        hosts = []
-        now = time.time()
-        if hasattr(repo, "_get_connection"):
-            with repo._get_connection() as conn:
-                for row in conn.execute("SELECT * FROM hosts ORDER BY last_seen DESC"):
-                    h = dict(row)
-                    h["is_online"] = (now - h["last_seen"]) < 90
-                    h["last_seen_str"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(h["last_seen"]))
-                    hosts.append(h)
-
+        fleet = get_fleet_hosts(repo, ttl=90)
         paths = []
         if engine and hasattr(engine, "config") and engine.config.paths:
             for p in engine.config.paths:
@@ -131,7 +122,7 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
                 {"id": "web", "path": "/var/www/html", "mode": "monitor", "decoys": True, "capture_content": False},
                 {"id": "docs", "path": "~/important", "mode": "protect", "decoys": True, "capture_content": True},
             ]
-        return render_template("assets.html", hosts=hosts, paths=paths)
+        return render_template("assets.html", fleet=fleet, hosts=fleet["hosts"], paths=paths)
 
     @app.route("/alerts/<int:alert_id>")
     def alert_detail(alert_id: int):

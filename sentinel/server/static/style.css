@@ -61,9 +61,19 @@ a:hover {
   display: none !important;
 }
 
+.sidebar-logo-mark {
+  flex-shrink: 0;
+  display: block;
+}
+
 .app-sidebar.collapsed .sidebar-header {
-  padding: 12px;
+  padding: 16px 0;
   justify-content: center;
+  align-items: center;
+}
+
+.app-sidebar.collapsed .sidebar-logo-mark {
+  margin: 0 auto;
 }
 
 .app-sidebar.collapsed .nav-item {
@@ -795,24 +805,28 @@ h3 {
    -------------------------------------------------------------------------- */
 #toast-container {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 1000;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10000;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  pointer-events: none;
 }
 
 .toast {
-  background: var(--surface-card);
+  pointer-events: auto;
+  background-color: var(--surface-raised);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  padding: 10px 14px;
-  box-shadow: 0 4px 8px var(--shadow-popover);
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px var(--shadow-popover);
   font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  color: var(--text-primary);
+  max-width: 380px;
   animation: toast-in var(--dur-ui) var(--ease-standard);
   transition: opacity var(--dur-ui) var(--ease-standard), transform var(--dur-ui) var(--ease-standard);
 }
@@ -873,12 +887,42 @@ dialog.cmd-palette-dialog::backdrop {
   flex-direction: column;
 }
 
+#cmd-palette-results::-webkit-scrollbar {
+  width: 4px;
+}
+
+#cmd-palette-results::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+#cmd-palette-results::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#cmd-palette-results::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 2px;
+}
+
+#cmd-palette-results::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+}
+
+#cmd-palette-results {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
 /* --------------------------------------------------------------------------
    Popover Menu Primitive (Native [popover] in top layer)
    -------------------------------------------------------------------------- */
 .sentinel-popover-menu[popover] {
   position: fixed;
   margin: 0;
+  top: 0;
+  left: 0;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--surface-bg);

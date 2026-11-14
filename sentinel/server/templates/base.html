@@ -79,7 +79,7 @@
   <!-- Enterprise Sidebar Rail (Navy Blue Chrome across themes so logo remains white) -->
   <aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-header" style="color: var(--logo-color);">
-      {{ brand.brand_logo(22) }}
+      {{ brand.brand_logo(22, "sidebar-logo-mark") }}
       <div class="hide-collapsed" style="display: flex; align-items: center;">
         {{ brand.brand_wordmark(15) }}
       </div>
@@ -147,7 +147,7 @@
         <button type="button" class="search-trigger" id="cmd-k-trigger" onclick="openCmdPalette()" title="Quick Command Palette (Ctrl+K)">
           <div style="display: flex; align-items: center; gap: 8px;">
             <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-search"></use></svg>
-            <span>Search hosts, paths, alerts...</span>
+            <span>Search alerts, hosts, paths...</span>
           </div>
           <kbd>⌘K</kbd>
         </button>
@@ -157,35 +157,25 @@
         <!-- Reusable Popover Host Selector -->
         <button type="button" class="host-selector-badge" popovertarget="host-popover" aria-haspopup="listbox" aria-expanded="false" id="host-selector-btn" title="Filter by monitored host" style="cursor: pointer; background: var(--surface-raised); border: 1px solid var(--border-subtle); color: var(--text-muted);">
           <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-server"></use></svg>
-          <span id="host-selector-label">Host: <b>All (5)</b></span>
+          <span id="host-selector-label">Host: <b>All ({{ fleet.total }})</b></span>
           <svg class="icon-sm" style="margin-left: 2px;"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-chevron-down"></use></svg>
         </button>
         <div popover="auto" id="host-popover" class="sentinel-popover-menu" role="listbox" aria-label="Filter Monitored Hosts">
-          <button type="button" class="sentinel-menu-item active" role="option" aria-selected="true" data-host-val="all" onclick="selectHostFilter('all', 'All (5)')">
+          <button type="button" class="sentinel-menu-item active" role="option" aria-selected="true" data-host-val="all" onclick="selectHostFilter('all', 'All ({{ fleet.total }})')">
             <span>All Monitored Hosts</span>
-            <span class="badge info">5</span>
+            <span class="badge info">{{ fleet.total }}</span>
           </button>
           <div class="sentinel-menu-divider"></div>
-          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="box-alpha" onclick="selectHostFilter('box-alpha', 'box-alpha')">
-            <span>box-alpha</span>
-            <span class="badge online">ONLINE</span>
+          {% for h in fleet.hosts %}
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="{{ h.host_id }}" onclick="selectHostFilter('{{ h.host_id }}', '{{ h.host_id }}')">
+            <span>{{ h.host_id }}</span>
+            {% if h.is_online %}
+              <span class="badge online">ONLINE</span>
+            {% else %}
+              <span class="badge offline">OFFLINE</span>
+            {% endif %}
           </button>
-          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="prod-web-01" onclick="selectHostFilter('prod-web-01', 'prod-web-01')">
-            <span>prod-web-01</span>
-            <span class="badge online">ONLINE</span>
-          </button>
-          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="prod-web-02" onclick="selectHostFilter('prod-web-02', 'prod-web-02')">
-            <span>prod-web-02</span>
-            <span class="badge online">ONLINE</span>
-          </button>
-          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="db-replica-03" onclick="selectHostFilter('db-replica-03', 'db-replica-03')">
-            <span>db-replica-03</span>
-            <span class="badge offline">OFFLINE</span>
-          </button>
-          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="staging-node-1" onclick="selectHostFilter('staging-node-1', 'staging-node-1')">
-            <span>staging-node-1</span>
-            <span class="badge online">ONLINE</span>
-          </button>
+          {% endfor %}
         </div>
 
         <!-- Theme Switcher Controls -->
@@ -214,14 +204,14 @@
   <div class="cmd-palette-card">
     <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; margin-bottom: 8px;">
       <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-search"></use></svg>
-      <input type="text" id="cmd-palette-input" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="cmd-palette-results" aria-activedescendant="" placeholder="Search alerts, hosts, paths, actions... (Esc to close, / to focus)" autocomplete="off" spellcheck="false" style="flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--text-primary); font-family: var(--font-sans);">
+      <input type="text" id="cmd-palette-input" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="cmd-palette-results" aria-activedescendant="" placeholder="Search alerts, hosts, paths..." autocomplete="off" spellcheck="false" style="flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--text-primary); font-family: var(--font-sans);">
       <span id="search-count-badge" class="badge info" style="display: none; font-size: 10px;">0 results</span>
       <kbd style="font-family: var(--font-mono); font-size: 10px; background: var(--surface-hover); border: 1px solid var(--border-subtle); border-radius: 3px; padding: 2px 6px; color: var(--text-muted); cursor: pointer;" onclick="closeCmdPalette()">ESC</kbd>
     </div>
     <div id="cmd-palette-results" role="listbox" aria-label="Search suggestions and actions" style="max-height: 360px; overflow-y: auto; padding: 4px 0;"></div>
     <div style="border-top: 1px solid var(--border-subtle); margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint); align-items: center;">
-      <span><kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">&uarr;&darr;</kbd> navigate &bull; <kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">&crarr;</kbd> select / filter &bull; <kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">Esc</kbd> close</span>
-      <span>Press <kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">/</kbd> anywhere to search</span>
+      <span><kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">↑↓</kbd> Navigate &bull; <kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">↵</kbd> Select</span>
+      <span><kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">Esc</kbd> Close</span>
     </div>
   </div>
 </dialog>
@@ -272,46 +262,114 @@ function updateThemeSwitcherUI() {
 document.addEventListener('DOMContentLoaded', updateThemeSwitcherUI);
 
 // ==========================================================================
-// Popover Menu Primitive (Top-layer native popover with roving focus & flip)
+// Popover Menu Primitive (Top-layer native popover with trigger positioning & flip)
 // ==========================================================================
-function positionPopover(trigger, popover) {
-  if (!trigger || !popover) return;
-  const rect = trigger.getBoundingClientRect();
-  const popRect = popover.getBoundingClientRect();
-  let top = rect.bottom + 4;
-  let left = rect.left;
+let activePopoverTrigger = null;
+let activeOpenPopover = null;
 
-  // JS Flip fallback: if overflowing bottom of viewport, position above
-  if (top + popRect.height > window.innerHeight - 8) {
-    top = Math.max(8, rect.top - popRect.height - 4);
+document.addEventListener('pointerdown', function(e) {
+  const trigger = e.target.closest('[popovertarget]');
+  if (trigger) activePopoverTrigger = trigger;
+}, true);
+
+document.addEventListener('click', function(e) {
+  const trigger = e.target.closest('[popovertarget]');
+  if (trigger) activePopoverTrigger = trigger;
+}, true);
+
+function getTriggerForPopover(popover) {
+  if (activePopoverTrigger && activePopoverTrigger.getAttribute('popovertarget') === popover.id) {
+    return activePopoverTrigger;
   }
-  // If overflowing right of viewport, align with right edge of trigger
-  if (left + popRect.width > window.innerWidth - 8) {
-    left = Math.max(8, rect.right - popRect.width);
-  }
-  popover.style.top = top + 'px';
-  popover.style.left = left + 'px';
+  return document.querySelector('[popovertarget="' + popover.id + '"]') || document.activeElement;
 }
 
-document.addEventListener('beforetoggle', function(e) {
-  const popover = e.target;
-  if (!popover || !popover.classList.contains('sentinel-popover-menu')) return;
-  if (e.newState === 'open') {
-    const trigger = document.querySelector('[popovertarget="' + popover.id + '"]') || document.activeElement;
-    if (trigger) {
-      positionPopover(trigger, popover);
-      trigger.setAttribute('aria-expanded', 'true');
+function positionPopover(trigger, popover) {
+  if (!trigger || !popover) return;
+  const tRect = trigger.getBoundingClientRect();
+  const pRect = popover.getBoundingClientRect();
+  const pWidth = pRect.width > 0 ? pRect.width : (popover.offsetWidth || 190);
+  const pHeight = pRect.height > 0 ? pRect.height : (popover.offsetHeight || 120);
+
+  // Normal: align to trigger's left edge, directly under trigger
+  let top = tRect.bottom + 4;
+  let left = tRect.left;
+
+  // Flip above if no room below
+  if (top + pHeight > window.innerHeight - 8) {
+    if (tRect.top - pHeight - 4 >= 8) {
+      top = tRect.top - pHeight - 4;
     }
+  }
+
+  // Align to trigger's right edge if left-aligned would overflow right
+  if (left + pWidth > window.innerWidth - 8) {
+    left = tRect.right - pWidth;
+  }
+
+  // Clamp to viewport by 8px
+  left = Math.max(8, Math.min(left, window.innerWidth - pWidth - 8));
+  top = Math.max(8, Math.min(top, window.innerHeight - pHeight - 8));
+
+  popover.style.top = top + 'px';
+  popover.style.left = left + 'px';
+  popover.style.margin = '0';
+}
+
+function onPopoverReposition() {
+  if (!activeOpenPopover) {
+    try {
+      const pop = document.querySelector('.sentinel-popover-menu:popover-open');
+      if (pop) activeOpenPopover = pop;
+    } catch(err) {}
+  }
+  if (activeOpenPopover) {
+    const trigger = getTriggerForPopover(activeOpenPopover);
+    if (trigger) positionPopover(trigger, activeOpenPopover);
+  }
+}
+
+function onPopoverToggle(e) {
+  const popover = e.target;
+  if (!popover || !popover.classList || !popover.classList.contains('sentinel-popover-menu')) return;
+
+  const isOpen = (e.newState === 'open') || (popover.matches && popover.matches(':popover-open'));
+  if (isOpen) {
+    activeOpenPopover = popover;
+    const trigger = getTriggerForPopover(popover);
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', 'true');
+      positionPopover(trigger, popover);
+      requestAnimationFrame(function() {
+        positionPopover(trigger, popover);
+      });
+    }
+    window.addEventListener('scroll', onPopoverReposition, { passive: true, capture: true });
+    window.addEventListener('resize', onPopoverReposition, { passive: true });
+
     setTimeout(function() {
-      const items = popover.querySelectorAll('[role="menuitem"], [role="option"]');
+      const items = popover.querySelectorAll('[role="menuitem"], [role="option"]:not([disabled])');
       const active = popover.querySelector('.active') || items[0];
       if (active) active.focus();
     }, 50);
   } else {
-    const trigger = document.querySelector('[popovertarget="' + popover.id + '"]');
+    if (activeOpenPopover === popover) activeOpenPopover = null;
+    const trigger = getTriggerForPopover(popover);
     if (trigger) trigger.setAttribute('aria-expanded', 'false');
+
+    let anyOpen = false;
+    try {
+      anyOpen = Boolean(document.querySelector('.sentinel-popover-menu:popover-open'));
+    } catch(err) {}
+    if (!anyOpen) {
+      window.removeEventListener('scroll', onPopoverReposition, { capture: true });
+      window.removeEventListener('resize', onPopoverReposition);
+    }
   }
-});
+}
+
+document.addEventListener('beforetoggle', onPopoverToggle, true);
+document.addEventListener('toggle', onPopoverToggle, true);
 
 // Popover Keyboard Navigation (Roving Focus, Home/End, Typeahead)
 let popoverTypeaheadBuffer = '';
@@ -351,10 +409,9 @@ document.addEventListener('keydown', function(e) {
   } else if (e.key === 'Escape') {
     e.preventDefault();
     if (typeof openPopover.hidePopover === 'function') openPopover.hidePopover();
-    const trigger = document.querySelector('[popovertarget="' + openPopover.id + '"]');
+    const trigger = getTriggerForPopover(openPopover);
     if (trigger) trigger.focus();
   } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-    // Typeahead matching
     popoverTypeaheadBuffer += e.key.toLowerCase();
     clearTimeout(popoverTypeaheadTimer);
     popoverTypeaheadTimer = setTimeout(function() { popoverTypeaheadBuffer = ''; }, 500);
@@ -398,8 +455,20 @@ function selectHostFilter(hostId, hostLabel) {
 }
 
 // ==========================================================================
-// Toast System (aria-live="polite", 3s dismiss, max 3 stacked)
+// Toast System (aria-live="polite", 3s dismiss, max 3 stacked, pause on hover)
 // ==========================================================================
+const SPRITE_URL = "{{ url_for('static', filename='icons/sprite.svg') }}";
+
+function createSvgIcon(iconName, extraClass) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', extraClass || 'icon-sm');
+  svg.style.flexShrink = '0';
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', SPRITE_URL + '#' + iconName);
+  svg.appendChild(use);
+  return svg;
+}
+
 function showToast(severity, message, duration) {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -414,12 +483,28 @@ function showToast(severity, message, duration) {
   toast.className = 'toast toast-' + sevLower;
   toast.setAttribute('role', 'status');
 
-  const badge = document.createElement('span');
-  badge.className = 'badge ' + sevLower;
-  badge.textContent = (severity || 'INFO').toUpperCase();
+  // Small icon instead of "INFO" pill
+  let iconName = 'icon-info';
+  let iconColor = 'var(--brand-accent)';
+  if (sevLower === 'ok' || sevLower === 'success') {
+    iconName = 'icon-check';
+    iconColor = 'var(--sev-ok, var(--color-ok))';
+  } else if (sevLower === 'danger' || sevLower === 'critical') {
+    iconName = 'icon-alert-triangle';
+    iconColor = 'var(--sev-critical, var(--color-danger))';
+  } else if (sevLower === 'high') {
+    iconName = 'icon-alert-triangle';
+    iconColor = 'var(--sev-high)';
+  } else if (sevLower === 'medium') {
+    iconName = 'icon-alert-circle';
+    iconColor = 'var(--sev-medium)';
+  }
+
+  const iconSvg = createSvgIcon(iconName, 'icon-sm');
+  iconSvg.style.color = iconColor;
 
   const msgSpan = document.createElement('span');
-  msgSpan.style.cssText = 'flex: 1; font-weight: 500; font-size: 12px;';
+  msgSpan.style.cssText = 'flex: 1; font-weight: 500; font-size: 12px; line-height: 1.4;';
   msgSpan.textContent = message;
 
   const closeBtn = document.createElement('button');
@@ -429,17 +514,36 @@ function showToast(severity, message, duration) {
   closeBtn.textContent = '×';
   closeBtn.onclick = function() { toast.remove(); };
 
-  toast.appendChild(badge);
+  toast.appendChild(iconSvg);
   toast.appendChild(msgSpan);
   toast.appendChild(closeBtn);
   container.appendChild(toast);
 
-  setTimeout(function() {
-    if (toast.parentElement) {
-      toast.classList.add('toast-fadeout');
-      setTimeout(function() { toast.remove(); }, 200);
-    }
-  }, duration || 3000);
+  // Pause dismissal on hover (3s total timer)
+  const totalDuration = duration || 3000;
+  let remainingMs = totalDuration;
+  let dismissTimer = null;
+  let startTimestamp = Date.now();
+
+  function startDismissTimer() {
+    startTimestamp = Date.now();
+    dismissTimer = setTimeout(function() {
+      if (toast.parentElement) {
+        toast.classList.add('toast-fadeout');
+        setTimeout(function() { toast.remove(); }, 200);
+      }
+    }, remainingMs);
+  }
+
+  function pauseDismissTimer() {
+    clearTimeout(dismissTimer);
+    remainingMs -= (Date.now() - startTimestamp);
+    if (remainingMs < 400) remainingMs = 400;
+  }
+
+  toast.addEventListener('mouseenter', pauseDismissTimer);
+  toast.addEventListener('mouseleave', startDismissTimer);
+  startDismissTimer();
 }
 
 function copyPath(el, text) {
@@ -481,8 +585,12 @@ function getRecentSearches() {
 function saveRecentSearch(q) {
   if (!q) return;
   try {
-    let recents = getRecentSearches().filter(function(item) { return item.toLowerCase() !== q.toLowerCase(); });
-    recents.unshift(q);
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    let recents = getRecentSearches().filter(function(item) {
+      return item.toLowerCase() !== trimmed.toLowerCase();
+    });
+    recents.unshift(trimmed);
     if (recents.length > 5) recents = recents.slice(0, 5);
     localStorage.setItem('sentinel_recent_searches', JSON.stringify(recents));
   } catch(e) {}
@@ -546,7 +654,7 @@ function updateSearchHighlight() {
 }
 
 function executePaletteAction(actionItem) {
-  saveRecentSearch(actionItem.title);
+  // Never save actions to recents (recents = typed queries only)
   if (actionItem.url) {
     window.location.href = actionItem.url;
   } else if (actionItem.action === 'toggle-theme') {
@@ -572,7 +680,41 @@ function renderPaletteDefault() {
   activeSearchIndex = -1;
   if (countBadge) countBadge.style.display = 'none';
 
-  // 1. Recent Searches (last 5 from localStorage)
+  // 1. Actions FIRST (empty box shows Actions then Recents)
+  const actTitle = document.createElement('div');
+  actTitle.className = 'search-group-title';
+  actTitle.textContent = 'Actions';
+  resultsContainer.appendChild(actTitle);
+
+  PALETTE_ACTIONS.forEach(function(act, idx) {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'search-item';
+    itemEl.id = 'palette-opt-act-' + idx;
+    itemEl.setAttribute('role', 'option');
+    itemEl.setAttribute('aria-selected', 'false');
+
+    const left = document.createElement('div');
+    left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+
+    const iconSvg = createSvgIcon(act.icon, 'icon-sm');
+    iconSvg.style.color = 'var(--text-muted)';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.style.fontWeight = '500';
+    titleSpan.textContent = act.title;
+
+    left.appendChild(iconSvg);
+    left.appendChild(titleSpan);
+    itemEl.appendChild(left);
+
+    itemEl.addEventListener('click', function() {
+      executePaletteAction(act);
+    });
+    resultsContainer.appendChild(itemEl);
+    currentSearchItems.push({ id: itemEl.id, el: itemEl, action: act });
+  });
+
+  // 2. Recent Searches SECOND (if any)
   const recents = getRecentSearches();
   if (recents && recents.length > 0) {
     const grpTitle = document.createElement('div');
@@ -589,14 +731,14 @@ function renderPaletteDefault() {
 
       const left = document.createElement('div');
       left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-      const badge = document.createElement('span');
-      badge.className = 'badge info';
-      badge.textContent = 'RECENT';
+
+      const iconSvg = createSvgIcon('icon-search', 'icon-sm');
+      iconSvg.style.color = 'var(--text-faint)';
 
       const qSpan = document.createElement('span');
       qSpan.textContent = rq;
 
-      left.appendChild(badge);
+      left.appendChild(iconSvg);
       left.appendChild(qSpan);
       itemEl.appendChild(left);
 
@@ -612,40 +754,6 @@ function renderPaletteDefault() {
     });
   }
 
-  // 2. Navigation Actions
-  const actTitle = document.createElement('div');
-  actTitle.className = 'search-group-title';
-  actTitle.textContent = 'Actions';
-  resultsContainer.appendChild(actTitle);
-
-  PALETTE_ACTIONS.forEach(function(act, idx) {
-    const itemEl = document.createElement('div');
-    itemEl.className = 'search-item';
-    itemEl.id = 'palette-opt-act-' + idx;
-    itemEl.setAttribute('role', 'option');
-    itemEl.setAttribute('aria-selected', 'false');
-
-    const left = document.createElement('div');
-    left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-    const badge = document.createElement('span');
-    badge.className = 'badge';
-    badge.textContent = 'ACTION';
-
-    const titleSpan = document.createElement('span');
-    titleSpan.style.fontWeight = '500';
-    titleSpan.textContent = act.title;
-
-    left.appendChild(badge);
-    left.appendChild(titleSpan);
-    itemEl.appendChild(left);
-
-    itemEl.addEventListener('click', function() {
-      executePaletteAction(act);
-    });
-    resultsContainer.appendChild(itemEl);
-    currentSearchItems.push({ id: itemEl.id, el: itemEl, action: act });
-  });
-
   if (currentSearchItems.length > 0) {
     activeSearchIndex = 0;
     updateSearchHighlight();
@@ -657,12 +765,13 @@ function performSearch(query) {
   const countBadge = document.getElementById('search-count-badge');
   if (!resultsContainer) return;
 
-  if (!query) {
+  const trimmedQuery = (query || '').trim();
+  if (!trimmedQuery) {
     renderPaletteDefault();
     return;
   }
 
-  fetch('/api/v1/search?q=' + encodeURIComponent(query))
+  fetch('/api/v1/search?q=' + encodeURIComponent(trimmedQuery))
     .then(function(res) {
       if (!res.ok) throw new Error('Search failed with status ' + res.status);
       return res.json();
@@ -672,8 +781,8 @@ function performSearch(query) {
       currentSearchItems = [];
       activeSearchIndex = -1;
 
-      // Filter local actions matching query
-      const qLower = query.toLowerCase();
+      // Filter actions matching query (typing hides actions that do not match)
+      const qLower = trimmedQuery.toLowerCase();
       const matchedActions = PALETTE_ACTIONS.filter(function(a) {
         return a.title.toLowerCase().indexOf(qLower) !== -1 || a.keywords.indexOf(qLower) !== -1;
       });
@@ -684,10 +793,15 @@ function performSearch(query) {
         countBadge.textContent = grandTotal + (grandTotal === 1 ? ' result' : ' results');
       }
 
+      // Save to recents ONLY if query returned results
+      if (grandTotal > 0) {
+        saveRecentSearch(trimmedQuery);
+      }
+
       if (grandTotal === 0) {
         const emptyDiv = document.createElement('div');
         emptyDiv.style.cssText = 'padding: 24px 12px; text-align: center; color: var(--text-faint); font-size: 12px;';
-        emptyDiv.textContent = 'No results found for "' + query + '"';
+        emptyDiv.textContent = 'No results found for "' + trimmedQuery + '"';
         resultsContainer.appendChild(emptyDiv);
         return;
       }
@@ -710,7 +824,6 @@ function performSearch(query) {
           renderFn(item, itemEl);
 
           itemEl.addEventListener('click', function() {
-            saveRecentSearch(query);
             if (item.action) {
               executePaletteAction(item.action);
             } else if (item.url) {
@@ -722,17 +835,16 @@ function performSearch(query) {
         });
       }
 
-      // Group 1: Actions
+      // Group 1: Actions (matching only)
       if (matchedActions.length > 0) {
-        addGroup('Actions', matchedActions.map(function(act) { return { title: act.title, action: act, url: act.url }; }), function(item, el) {
+        addGroup('Actions', matchedActions.map(function(act) { return { title: act.title, action: act, url: act.url, icon: act.icon }; }), function(item, el) {
           const left = document.createElement('div');
           left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-          const badge = document.createElement('span');
-          badge.className = 'badge';
-          badge.textContent = 'ACTION';
+          const iconSvg = createSvgIcon(item.icon, 'icon-sm');
+          iconSvg.style.color = 'var(--text-muted)';
           const span = document.createElement('span');
           span.textContent = item.title;
-          left.appendChild(badge);
+          left.appendChild(iconSvg);
           left.appendChild(span);
           el.appendChild(left);
         });
@@ -768,20 +880,22 @@ function performSearch(query) {
       addGroup('Hosts', data.hosts, function(host, el) {
         const left = document.createElement('div');
         left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-        const hostBadge = document.createElement('span');
-        hostBadge.className = 'badge online';
-        hostBadge.textContent = 'HOST';
+        const iconSvg = createSvgIcon('icon-server', 'icon-sm');
+        iconSvg.style.color = 'var(--text-muted)';
 
         const nameSpan = document.createElement('span');
         nameSpan.style.fontWeight = '500';
         nameSpan.textContent = host.name || host.host_id;
 
-        left.appendChild(hostBadge);
+        left.appendChild(iconSvg);
         left.appendChild(nameSpan);
 
         const right = document.createElement('div');
-        right.style.cssText = 'font-size: 11px; color: var(--text-faint); font-family: var(--font-mono);';
-        right.textContent = host.agent_version || host.status || '';
+        right.style.cssText = 'font-size: 11px; color: var(--text-faint); font-family: var(--font-mono); display: flex; align-items: center; gap: 6px;';
+        const stBadge = document.createElement('span');
+        stBadge.className = 'badge ' + ((host.status === 'online') ? 'online' : 'offline');
+        stBadge.textContent = (host.status || 'offline').toUpperCase();
+        right.appendChild(stBadge);
 
         el.appendChild(left);
         el.appendChild(right);
@@ -791,15 +905,14 @@ function performSearch(query) {
       addGroup('Monitored Paths', data.paths, function(pathItem, el) {
         const left = document.createElement('div');
         left.style.cssText = 'display: flex; align-items: center; gap: 8px; overflow: hidden;';
-        const pathBadge = document.createElement('span');
-        pathBadge.className = 'badge info';
-        pathBadge.textContent = 'PATH';
+        const iconSvg = createSvgIcon('icon-file', 'icon-sm');
+        iconSvg.style.color = 'var(--text-faint)';
 
         const pSpan = document.createElement('span');
         pSpan.style.cssText = 'font-family: var(--font-mono); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;';
         pSpan.textContent = pathItem.path || pathItem.id;
 
-        left.appendChild(pathBadge);
+        left.appendChild(iconSvg);
         left.appendChild(pSpan);
 
         const right = document.createElement('div');
@@ -808,6 +921,21 @@ function performSearch(query) {
 
         el.appendChild(left);
         el.appendChild(right);
+      });
+
+      if (currentSearchItems.length > 0) {
+        activeSearchIndex = 0;
+        updateSearchHighlight();
+      }
+    })
+    .catch(function(err) {
+      resultsContainer.textContent = '';
+      const errDiv = document.createElement('div');
+      errDiv.style.cssText = 'padding: 24px 12px; text-align: center; color: var(--color-danger); font-size: 12px;';
+      errDiv.textContent = 'Search request error: ' + err.message;
+      resultsContainer.appendChild(errDiv);
+    });
+}
       });
 
       if (currentSearchItems.length > 0) {

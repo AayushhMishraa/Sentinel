@@ -1,9 +1,11 @@
 """Tests for Sentinel Web Dashboard."""
 
+import time
 import pytest
 from sentinel.models import Change, EventEnvelope, Meta
 from sentinel.server.app import create_sentinel_app
-from sentinel.server.repo import SQLiteRepository
+from sentinel.server.repo import SQLiteRepository, get_fleet_hosts
+from tools.seed_demo import seed
 
 
 @pytest.fixture
@@ -238,6 +240,135 @@ def test_u2_dialog_and_popover_attributes_in_served_html(dashboard_client):
 
     # 3. Toast system container
     assert 'id="toast-container" aria-live="polite"' in html
+
+
+def test_data_consistency_across_views_and_api(tmp_path):
+    """Test 4: DATA CONSISTENCY - ONE function get_fleet_hosts computes host list, counts, and online/offline.
+
+    Verifies counts and statuses agree across Alerts page, Assets page, and /api/v1/hosts.
+    """
+    db_path = str(tmp_path / "fleet_consistency.db")
+    repo = SQLiteRepository(db_path)
+    now = time.time()
+    with repo._get_connection() as conn:
+        conn.execute(
+            "INSERT INTO hosts (host_id, name, agent_version, status, last_seen) VALUES (?, ?, ?, ?, ?)",
+            ("host-1", "Host One", "0.1.0", "online", now - 10)
+        )
+        conn.execute(
+            "INSERT INTO hosts (host_id, name, agent_version, status, last_seen) VALUES (?, ?, ?, ?, ?)",
+            ("host-2", "Host Two", "0.1.0", "online", now - 30)
+        )
+        conn.execute(
+            "INSERT INTO hosts (host_id, name, agent_version, status, last_seen) VALUES (?, ?, ?, ?, ?)",
+            ("host-3", "Host Three", "0.1.0", "offline", now - 500)
+        )
+        conn.commit()
+
+    fleet = get_fleet_hosts(repo, ttl=90)
+    assert fleet["total"] == 3
+    assert fleet["online_count"] == 2
+    assert fleet["offline_count"] == 1
+
+    app = create_sentinel_app(repo)
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    # 1. Check API /api/v1/hosts
+    resp_api = client.get("/api/v1/hosts")
+    assert resp_api.status_code == 200
+    data_api = resp_api.get_json()
+    assert data_api["ok"] is True
+    assert data_api["total"] == 3
+    assert data_api["online_count"] == 2
+    assert data_api["offline_count"] == 1
+    api_hosts = {h["host_id"]: h for h in data_api["hosts"]}
+    assert api_hosts["host-1"]["status"] == "online"
+    assert api_hosts["host-2"]["status"] == "online"
+    assert api_hosts["host-3"]["status"] == "offline"
+
+    # 2. Check Assets page /assets
+    resp_assets = client.get("/assets")
+    assert resp_assets.status_code == 200
+    html_assets = resp_assets.get_data(as_text=True)
+    assert "3 REGISTERED HOSTS" in html_assets
+    assert "HEARTBEAT TTL: 90s" in html_assets
+    assert "3 Total Hosts" in html_assets
+    assert "host-1" in html_assets
+    assert "host-2" in html_assets
+    assert "host-3" in html_assets
+
+    # 3. Check Alerts page / (Host selector badge and dropdown)
+    resp_index = client.get("/")
+    assert resp_index.status_code == 200
+    html_index = resp_index.get_data(as_text=True)
+    assert "Host: <b>All (3)</b>" in html_index
+    assert 'data-host-val="host-1"' in html_index
+    assert 'data-host-val="host-2"' in html_index
+    assert 'data-host-val="host-3"' in html_index
+
+
+def test_chart_data_after_seed_demo(tmp_path):
+    """Test 6: CHART - after seed_demo, curve shows visible peak and >=5 distinct values."""
+    db_path = str(tmp_path / "chart_demo.db")
+    ret = seed(db_path, reset=True)
+    assert ret == 0
+
+    repo = SQLiteRepository(db_path)
+    now = time.time()
+    buckets = [0] * 24
+    with repo._get_connection() as conn:
+        cur = conn.execute("SELECT ts FROM changes WHERE ts >= ?", (now - 24 * 3600,))
+        for row in cur.fetchall():
+            ts = row["ts"]
+            hour_idx = int((ts - (now - 24 * 3600)) / 3600)
+            if 0 <= hour_idx < 24:
+                buckets[hour_idx] += 1
+
+    distinct_values = set(buckets)
+    print(f"\n24 Hourly change buckets: {buckets}")
+    print(f"Number of distinct values: {len(distinct_values)}")
+    assert len(distinct_values) >= 5
+    assert max(buckets) >= 100  # Visible peak
+
+    # Verify rendered chart line path in /
+    app = create_sentinel_app(repo)
+    app.config["TESTING"] = True
+    client = app.test_client()
+    resp = client.get("/")
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+    assert 'd="M 0' in html
+
+
+def test_u2_fix_popover_positioning_and_toasts(dashboard_client):
+    """Test U2-FIX popover positioning engine, solid toasts with pause-on-hover, and palette recents."""
+    client, _ = dashboard_client
+    resp = client.get("/")
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+
+    # 1. Popover positioning engine
+    assert "positionPopover(trigger, popover)" in html
+    assert "getBoundingClientRect" in html
+    assert "addEventListener('beforetoggle'" in html or "addEventListener('toggle'" in html
+    assert "onPopoverReposition" in html
+    assert "window.innerHeight - 8" in html
+    assert "window.innerWidth - 8" in html
+
+    # 2. Toast system
+    assert 'id="toast-container"' in html
+    assert "pauseDismissTimer" in html
+    assert "mouseenter" in html
+    assert "mouseleave" in html
+    assert "while (container.children.length >= 3)" in html
+    assert "toast.remove()" in html
+
+    # 3. Palette
+    assert 'placeholder="Search alerts, hosts, paths..."' in html
+    assert "saveRecentSearch" in html
+    assert "sentinel_recent_searches" in html
+
 
 
 

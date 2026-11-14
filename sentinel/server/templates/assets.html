@@ -9,7 +9,7 @@
     <h1 class="page-title">Fleet Assets &amp; Monitored Endpoints</h1>
   </div>
   <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-faint);">
-    5 REGISTERED HOSTS &bull; HEARTBEAT TTL: 90s
+    {{ fleet.total }} REGISTERED HOSTS &bull; HEARTBEAT TTL: 90s
   </div>
 </div>
 
@@ -19,7 +19,7 @@
       <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-server"></use></svg>
       Connected Fleet Host Agents
     </div>
-    <span class="badge info">{{ hosts | length }} Total Hosts</span>
+    <span class="badge info">{{ fleet.total }} Total Hosts</span>
   </div>
   {% if not hosts %}
     <div class="empty-state">

@@ -243,36 +243,6 @@ function applyAlertsFilters() {
   });
 }
 
-function showToast(severity, message, duration) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  container.textContent = '';
-
-  const toast = document.createElement('div');
-  const sevLower = (severity || 'info').toLowerCase();
-  toast.className = `toast toast-${sevLower}`;
-
-  const row = document.createElement('div');
-  row.style.cssText = 'display: flex; align-items: center; gap: 10px;';
-
-  const badge = document.createElement('span');
-  badge.className = `badge ${sevLower}`;
-  badge.textContent = (severity || 'INFO').toUpperCase();
-
-  const msgSpan = document.createElement('span');
-  msgSpan.textContent = message;
-  msgSpan.style.fontWeight = '500';
-
-  row.appendChild(badge);
-  row.appendChild(msgSpan);
-  toast.appendChild(row);
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, duration || 4000);
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   const metaEl = document.getElementById('latest-alert-meta');
   if (!metaEl) return;

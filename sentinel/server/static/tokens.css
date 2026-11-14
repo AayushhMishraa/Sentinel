@@ -54,7 +54,7 @@ html[data-theme="dark"] {
   /* Surfaces */
   --surface-bg: #0b0f14;
   --surface-card: rgba(255, 255, 255, 0.03);
-  --surface-raised: rgba(255, 255, 255, 0.05);
+  --surface-raised: #161c24;
   --surface-hover: rgba(255, 255, 255, 0.08);
   --surface-selected: rgba(56, 189, 248, 0.12);
   --backdrop: rgba(11, 15, 20, 0.75);
