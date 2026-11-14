@@ -211,5 +211,35 @@ def test_api_v1_search_matches(dashboard_client):
     assert any("box-alpha" in a["host_id"] for a in data_host["alerts"])
 
 
+def test_u2_dialog_and_popover_attributes_in_served_html(dashboard_client):
+    """Verifies U2 native <dialog> palette, popover menus, and aria-live toast container."""
+    client, _ = dashboard_client
+    resp = client.get("/")
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+
+    # 1. Native <dialog> command palette
+    assert '<dialog id="cmd-palette-dialog"' in html
+    assert 'role="combobox"' in html
+    assert 'aria-autocomplete="list"' in html
+    assert 'aria-controls="cmd-palette-results"' in html
+    assert 'id="cmd-palette-results" role="listbox"' in html
+    assert "PALETTE_ACTIONS" in html
+    assert "Toggle Theme" in html
+    assert "Demo Contrast" in html
+
+    # 2. Native popover attributes
+    assert 'popover="auto"' in html
+    assert 'popovertarget="host-popover"' in html
+    assert 'popovertarget="filter-sev-popover"' in html
+    assert 'popovertarget="filter-status-popover"' in html
+    assert 'popovertarget="row-menu-1"' in html
+    assert 'class="row-more-btn"' in html
+
+    # 3. Toast system container
+    assert 'id="toast-container" aria-live="polite"' in html
+
+
+
 
 

@@ -66,10 +66,25 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
             "total_open": sum(1 for a in alerts if a.status == "open"),
         }
 
-        # Calculate SVG change-over-time path (24 data points)
-        points = [max(1, (a.count if i < len(alerts) else (i % 3 + 1))) for i, a in enumerate(alerts[:24])]
-        while len(points) < 24:
-            points.append(1)
+        # Calculate SVG change-over-time path (24 hourly data points)
+        now = time.time()
+        buckets = [0] * 24
+        if hasattr(repo, "_get_connection"):
+            with repo._get_connection() as conn:
+                cur = conn.execute("SELECT ts FROM changes WHERE ts >= ?", (now - 24 * 3600,))
+                for row in cur.fetchall():
+                    ts = row["ts"]
+                    hour_idx = int((ts - (now - 24 * 3600)) / 3600)
+                    if 0 <= hour_idx < 24:
+                        buckets[hour_idx] += 1
+
+        if max(buckets) > 0:
+            points = buckets
+        else:
+            points = [max(1, (a.count if i < len(alerts) else (i % 3 + 1))) for i, a in enumerate(alerts[:24])]
+            while len(points) < 24:
+                points.append(1)
+
         max_v = max(points)
         width, height = 600, 100
         step = width / (len(points) - 1)

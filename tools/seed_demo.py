@@ -52,6 +52,32 @@ def seed(repo_path: str, reset: bool = True) -> int:
             )
         conn.commit()
 
+        # 2. Seed 24 hours of hourly change events (realistic curve with burst for Live Change Velocity)
+        hourly_curve = [
+            3, 2, 1, 2, 3, 5, 8, 15, 24, 38, 52, 68, 64, 72, 145, 192, 128, 78, 55, 40, 28, 18, 10, 6
+        ]
+        for h, count in enumerate(hourly_curve):
+            hour_start = now - (23 - h) * 3600
+            for i in range(count):
+                ev_ts = hour_start + (i * 3500 // max(1, count))
+                ev_id = f"change-seed-{h:02d}-{i:03d}"
+                env = EventEnvelope(
+                    event_id=ev_id,
+                    root_id="ssh" if i % 2 == 0 else "sandbox",
+                    path=f"/var/log/audit/session_{h}_{i}.log",
+                    host_id="box-alpha" if i % 3 == 0 else ("prod-web-01" if i % 3 == 1 else "prod-web-02"),
+                    ts=ev_ts,
+                    severity="critical" if (h in (14, 15) and i < 5) else ("high" if h in (14, 15) else "info"),
+                    summary=f"Change event record at hour -{23-h}",
+                    change=Change(kinds=["modified"]),
+                )
+                cur.execute(
+                    """INSERT OR REPLACE INTO changes (event_id, alert_id, host_id, ts, json)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (ev_id, None, env.host_id, ev_ts, env.to_json()),
+                )
+        conn.commit()
+
     # 2. Seed 5 Realistic Alerts with Mixed Severities & Signals
     demo_alerts = [
         # Critical Alert

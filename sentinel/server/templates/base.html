@@ -154,10 +154,38 @@
       </div>
 
       <div class="topbar-right">
-        <!-- Host Selector -->
-        <div class="host-selector-badge" title="Filter by monitored host">
+        <!-- Reusable Popover Host Selector -->
+        <button type="button" class="host-selector-badge" popovertarget="host-popover" aria-haspopup="listbox" aria-expanded="false" id="host-selector-btn" title="Filter by monitored host" style="cursor: pointer; background: var(--surface-raised); border: 1px solid var(--border-subtle); color: var(--text-muted);">
           <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-server"></use></svg>
-          <span>Host: <b>All (5)</b></span>
+          <span id="host-selector-label">Host: <b>All (5)</b></span>
+          <svg class="icon-sm" style="margin-left: 2px;"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-chevron-down"></use></svg>
+        </button>
+        <div popover="auto" id="host-popover" class="sentinel-popover-menu" role="listbox" aria-label="Filter Monitored Hosts">
+          <button type="button" class="sentinel-menu-item active" role="option" aria-selected="true" data-host-val="all" onclick="selectHostFilter('all', 'All (5)')">
+            <span>All Monitored Hosts</span>
+            <span class="badge info">5</span>
+          </button>
+          <div class="sentinel-menu-divider"></div>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="box-alpha" onclick="selectHostFilter('box-alpha', 'box-alpha')">
+            <span>box-alpha</span>
+            <span class="badge online">ONLINE</span>
+          </button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="prod-web-01" onclick="selectHostFilter('prod-web-01', 'prod-web-01')">
+            <span>prod-web-01</span>
+            <span class="badge online">ONLINE</span>
+          </button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="prod-web-02" onclick="selectHostFilter('prod-web-02', 'prod-web-02')">
+            <span>prod-web-02</span>
+            <span class="badge online">ONLINE</span>
+          </button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="db-replica-03" onclick="selectHostFilter('db-replica-03', 'db-replica-03')">
+            <span>db-replica-03</span>
+            <span class="badge offline">OFFLINE</span>
+          </button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" data-host-val="staging-node-1" onclick="selectHostFilter('staging-node-1', 'staging-node-1')">
+            <span>staging-node-1</span>
+            <span class="badge online">ONLINE</span>
+          </button>
         </div>
 
         <!-- Theme Switcher Controls -->
@@ -181,24 +209,24 @@
   </div>
 </div>
 
-<!-- Non-Blocking Command Palette Dialog (Ctrl+K, /) -->
-<div id="cmd-palette-dialog" class="modal-backdrop" style="display: none;" onclick="if(event.target===this)closeCmdPalette();">
-  <div class="modal-card" style="max-width: 580px; width: 100%; border-radius: var(--radius-md); box-shadow: var(--shadow-popover); background: var(--surface-bg); border: 1px solid var(--border-strong); padding: 16px;">
+<!-- Upgraded Native <dialog> Command Palette with Backdrop Blur -->
+<dialog id="cmd-palette-dialog" class="cmd-palette-dialog" aria-modal="true" aria-labelledby="cmd-palette-input">
+  <div class="cmd-palette-card">
     <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; margin-bottom: 8px;">
       <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-search"></use></svg>
-      <input type="text" id="cmd-palette-input" placeholder="Search alerts, hosts, paths... (Esc to close, / to focus)" autocomplete="off" spellcheck="false" style="flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--text-primary); font-family: var(--font-sans);">
+      <input type="text" id="cmd-palette-input" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="cmd-palette-results" aria-activedescendant="" placeholder="Search alerts, hosts, paths, actions... (Esc to close, / to focus)" autocomplete="off" spellcheck="false" style="flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--text-primary); font-family: var(--font-sans);">
       <span id="search-count-badge" class="badge info" style="display: none; font-size: 10px;">0 results</span>
-      <kbd style="font-family: var(--font-mono); font-size: 10px; background: var(--surface-hover); border: 1px solid var(--border-subtle); border-radius: 3px; padding: 2px 6px; color: var(--text-muted);">ESC</kbd>
+      <kbd style="font-family: var(--font-mono); font-size: 10px; background: var(--surface-hover); border: 1px solid var(--border-subtle); border-radius: 3px; padding: 2px 6px; color: var(--text-muted); cursor: pointer;" onclick="closeCmdPalette()">ESC</kbd>
     </div>
-    <div id="cmd-palette-results" style="max-height: 360px; overflow-y: auto; padding: 4px 0;"></div>
-    <div style="border-top: 1px solid var(--border-subtle); margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint);">
-      <span><b>&uarr;&darr;</b> navigate &bull; <b>&crarr;</b> open / filter</span>
-      <span>Press <b>/</b> anywhere to search</span>
+    <div id="cmd-palette-results" role="listbox" aria-label="Search suggestions and actions" style="max-height: 360px; overflow-y: auto; padding: 4px 0;"></div>
+    <div style="border-top: 1px solid var(--border-subtle); margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint); align-items: center;">
+      <span><kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">&uarr;&darr;</kbd> navigate &bull; <kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">&crarr;</kbd> select / filter &bull; <kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">Esc</kbd> close</span>
+      <span>Press <kbd style="font-size: 10px; padding: 1px 4px; background: var(--surface-hover); border-radius: 2px;">/</kbd> anywhere to search</span>
     </div>
   </div>
-</div>
+</dialog>
 
-<div id="toast-container"></div>
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 function toggleSidebarRail() {
@@ -243,22 +271,241 @@ function updateThemeSwitcherUI() {
 }
 document.addEventListener('DOMContentLoaded', updateThemeSwitcherUI);
 
-// Non-blocking Command Palette & Live Search
+// ==========================================================================
+// Popover Menu Primitive (Top-layer native popover with roving focus & flip)
+// ==========================================================================
+function positionPopover(trigger, popover) {
+  if (!trigger || !popover) return;
+  const rect = trigger.getBoundingClientRect();
+  const popRect = popover.getBoundingClientRect();
+  let top = rect.bottom + 4;
+  let left = rect.left;
+
+  // JS Flip fallback: if overflowing bottom of viewport, position above
+  if (top + popRect.height > window.innerHeight - 8) {
+    top = Math.max(8, rect.top - popRect.height - 4);
+  }
+  // If overflowing right of viewport, align with right edge of trigger
+  if (left + popRect.width > window.innerWidth - 8) {
+    left = Math.max(8, rect.right - popRect.width);
+  }
+  popover.style.top = top + 'px';
+  popover.style.left = left + 'px';
+}
+
+document.addEventListener('beforetoggle', function(e) {
+  const popover = e.target;
+  if (!popover || !popover.classList.contains('sentinel-popover-menu')) return;
+  if (e.newState === 'open') {
+    const trigger = document.querySelector('[popovertarget="' + popover.id + '"]') || document.activeElement;
+    if (trigger) {
+      positionPopover(trigger, popover);
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+    setTimeout(function() {
+      const items = popover.querySelectorAll('[role="menuitem"], [role="option"]');
+      const active = popover.querySelector('.active') || items[0];
+      if (active) active.focus();
+    }, 50);
+  } else {
+    const trigger = document.querySelector('[popovertarget="' + popover.id + '"]');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+  }
+});
+
+// Popover Keyboard Navigation (Roving Focus, Home/End, Typeahead)
+let popoverTypeaheadBuffer = '';
+let popoverTypeaheadTimer = null;
+
+document.addEventListener('keydown', function(e) {
+  const openPopovers = document.querySelectorAll('.sentinel-popover-menu');
+  let openPopover = null;
+  openPopovers.forEach(function(p) {
+    try {
+      if (p.matches(':popover-open')) openPopover = p;
+    } catch(err) {
+      if (p.style.display !== 'none' && p.hasAttribute('popover')) openPopover = p;
+    }
+  });
+
+  if (!openPopover || !openPopover.contains(document.activeElement)) return;
+
+  const items = Array.from(openPopover.querySelectorAll('[role="menuitem"], [role="option"]:not([disabled])'));
+  if (items.length === 0) return;
+  const currentIndex = items.indexOf(document.activeElement);
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const next = (currentIndex + 1) % items.length;
+    items[next].focus();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    const prev = (currentIndex - 1 + items.length) % items.length;
+    items[prev].focus();
+  } else if (e.key === 'Home') {
+    e.preventDefault();
+    items[0].focus();
+  } else if (e.key === 'End') {
+    e.preventDefault();
+    items[items.length - 1].focus();
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    if (typeof openPopover.hidePopover === 'function') openPopover.hidePopover();
+    const trigger = document.querySelector('[popovertarget="' + openPopover.id + '"]');
+    if (trigger) trigger.focus();
+  } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    // Typeahead matching
+    popoverTypeaheadBuffer += e.key.toLowerCase();
+    clearTimeout(popoverTypeaheadTimer);
+    popoverTypeaheadTimer = setTimeout(function() { popoverTypeaheadBuffer = ''; }, 500);
+
+    const match = items.find(function(item) {
+      return item.textContent.trim().toLowerCase().startsWith(popoverTypeaheadBuffer);
+    });
+    if (match) match.focus();
+  }
+});
+
+function selectHostFilter(hostId, hostLabel) {
+  const labelEl = document.getElementById('host-selector-label');
+  if (labelEl) {
+    labelEl.textContent = '';
+    const text = document.createTextNode('Host: ');
+    const bold = document.createElement('b');
+    bold.textContent = hostLabel;
+    labelEl.appendChild(text);
+    labelEl.appendChild(bold);
+  }
+  const popover = document.getElementById('host-popover');
+  if (popover) {
+    popover.querySelectorAll('.sentinel-menu-item').forEach(function(btn) {
+      if (btn.getAttribute('data-host-val') === hostId) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+      }
+    });
+    if (typeof popover.hidePopover === 'function') popover.hidePopover();
+  }
+  if (typeof applyAlertsFilters === 'function') {
+    window.currentHostFilter = hostId;
+    applyAlertsFilters();
+  } else {
+    showToast('info', 'Filter set: Host ' + hostLabel, 3000);
+  }
+}
+
+// ==========================================================================
+// Toast System (aria-live="polite", 3s dismiss, max 3 stacked)
+// ==========================================================================
+function showToast(severity, message, duration) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  // Max 3 stacked
+  while (container.children.length >= 3) {
+    container.firstElementChild.remove();
+  }
+
+  const toast = document.createElement('div');
+  const sevLower = (severity || 'info').toLowerCase();
+  toast.className = 'toast toast-' + sevLower;
+  toast.setAttribute('role', 'status');
+
+  const badge = document.createElement('span');
+  badge.className = 'badge ' + sevLower;
+  badge.textContent = (severity || 'INFO').toUpperCase();
+
+  const msgSpan = document.createElement('span');
+  msgSpan.style.cssText = 'flex: 1; font-weight: 500; font-size: 12px;';
+  msgSpan.textContent = message;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'toast-close-btn';
+  closeBtn.setAttribute('aria-label', 'Dismiss toast');
+  closeBtn.textContent = '×';
+  closeBtn.onclick = function() { toast.remove(); };
+
+  toast.appendChild(badge);
+  toast.appendChild(msgSpan);
+  toast.appendChild(closeBtn);
+  container.appendChild(toast);
+
+  setTimeout(function() {
+    if (toast.parentElement) {
+      toast.classList.add('toast-fadeout');
+      setTimeout(function() { toast.remove(); }, 200);
+    }
+  }, duration || 3000);
+}
+
+function copyPath(el, text) {
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('info', 'Copied: ' + text, 3000);
+    }).catch(function() {
+      showToast('danger', 'Unable to copy path to clipboard', 3000);
+    });
+  } else {
+    showToast('info', 'Copied: ' + text, 3000);
+  }
+}
+
+// ==========================================================================
+// Upgraded Command Palette (<dialog>, Actions, Recents, ARIA, Kbd hints)
+// ==========================================================================
 let searchDebounceTimer = null;
 let currentSearchItems = [];
 let activeSearchIndex = -1;
 
+const PALETTE_ACTIONS = [
+  { id: 'act-alerts', title: 'Go to Alerts Feed', category: 'Actions', url: '/', icon: 'icon-shield', keywords: 'alerts feed home dashboard live threats' },
+  { id: 'act-assets', title: 'Go to Fleet Assets', category: 'Actions', url: '/assets', icon: 'icon-server', keywords: 'assets fleet hosts endpoints machines agents' },
+  { id: 'act-report', title: 'Go to Compliance Report', category: 'Actions', url: '/report', icon: 'icon-file', keywords: 'compliance report audit export log' },
+  { id: 'act-uikit', title: 'Go to Design System (UI Kit)', category: 'Actions', url: '/ui-kit', icon: 'icon-database', keywords: 'ui kit design system components tokens spec' },
+  { id: 'act-theme', title: 'Toggle Theme (Light / Dark)', category: 'Actions', action: 'toggle-theme', icon: 'icon-sun', keywords: 'theme toggle light dark mode switch' },
+  { id: 'act-contrast', title: 'Switch to Demo Contrast Mode', category: 'Actions', action: 'contrast-theme', icon: 'icon-contrast', keywords: 'demo contrast projector high black mode' },
+];
+
+function getRecentSearches() {
+  try {
+    const raw = localStorage.getItem('sentinel_recent_searches');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveRecentSearch(q) {
+  if (!q) return;
+  try {
+    let recents = getRecentSearches().filter(function(item) { return item.toLowerCase() !== q.toLowerCase(); });
+    recents.unshift(q);
+    if (recents.length > 5) recents = recents.slice(0, 5);
+    localStorage.setItem('sentinel_recent_searches', JSON.stringify(recents));
+  } catch(e) {}
+}
+
 function openCmdPalette() {
-  const p = document.getElementById('cmd-palette-dialog');
-  if (p) {
-    p.style.display = 'flex';
+  const dialog = document.getElementById('cmd-palette-dialog');
+  if (dialog) {
+    if (typeof dialog.showModal === 'function') {
+      if (!dialog.open) dialog.showModal();
+    } else {
+      dialog.style.display = 'block';
+    }
     setTimeout(function() {
       const input = document.getElementById('cmd-palette-input');
       if (input) {
         input.focus();
         input.select();
-        if (input.value.trim()) {
-          performSearch(input.value.trim());
+        const val = input.value.trim();
+        if (val) {
+          performSearch(val);
+        } else {
+          renderPaletteDefault();
         }
       }
     }, 50);
@@ -266,19 +513,142 @@ function openCmdPalette() {
 }
 
 function closeCmdPalette() {
-  const p = document.getElementById('cmd-palette-dialog');
-  if (p) p.style.display = 'none';
+  const dialog = document.getElementById('cmd-palette-dialog');
+  if (dialog) {
+    if (typeof dialog.close === 'function') {
+      if (dialog.open) dialog.close();
+    } else {
+      dialog.style.display = 'none';
+    }
+  }
   activeSearchIndex = -1;
+  const input = document.getElementById('cmd-palette-input');
+  if (input) input.setAttribute('aria-activedescendant', '');
 }
 
 function updateSearchHighlight() {
+  const input = document.getElementById('cmd-palette-input');
   for (let i = 0; i < currentSearchItems.length; i++) {
+    const item = currentSearchItems[i];
     if (i === activeSearchIndex) {
-      currentSearchItems[i].el.classList.add('search-item-active');
-      currentSearchItems[i].el.scrollIntoView({ block: 'nearest' });
+      item.el.classList.add('search-item-active');
+      item.el.setAttribute('aria-selected', 'true');
+      item.el.scrollIntoView({ block: 'nearest' });
+      if (input) input.setAttribute('aria-activedescendant', item.id);
     } else {
-      currentSearchItems[i].el.classList.remove('search-item-active');
+      item.el.classList.remove('search-item-active');
+      item.el.setAttribute('aria-selected', 'false');
     }
+  }
+  if (activeSearchIndex === -1 && input) {
+    input.setAttribute('aria-activedescendant', '');
+  }
+}
+
+function executePaletteAction(actionItem) {
+  saveRecentSearch(actionItem.title);
+  if (actionItem.url) {
+    window.location.href = actionItem.url;
+  } else if (actionItem.action === 'toggle-theme') {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    setSentinelTheme(next);
+    closeCmdPalette();
+    showToast('info', 'Theme set to ' + next, 3000);
+  } else if (actionItem.action === 'contrast-theme') {
+    setSentinelTheme('contrast');
+    closeCmdPalette();
+    showToast('info', 'Demo Contrast mode active', 3000);
+  }
+}
+
+function renderPaletteDefault() {
+  const resultsContainer = document.getElementById('cmd-palette-results');
+  const countBadge = document.getElementById('search-count-badge');
+  if (!resultsContainer) return;
+
+  resultsContainer.textContent = '';
+  currentSearchItems = [];
+  activeSearchIndex = -1;
+  if (countBadge) countBadge.style.display = 'none';
+
+  // 1. Recent Searches (last 5 from localStorage)
+  const recents = getRecentSearches();
+  if (recents && recents.length > 0) {
+    const grpTitle = document.createElement('div');
+    grpTitle.className = 'search-group-title';
+    grpTitle.textContent = 'Recent Searches';
+    resultsContainer.appendChild(grpTitle);
+
+    recents.forEach(function(rq, idx) {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'search-item';
+      itemEl.id = 'palette-opt-recent-' + idx;
+      itemEl.setAttribute('role', 'option');
+      itemEl.setAttribute('aria-selected', 'false');
+
+      const left = document.createElement('div');
+      left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+      const badge = document.createElement('span');
+      badge.className = 'badge info';
+      badge.textContent = 'RECENT';
+
+      const qSpan = document.createElement('span');
+      qSpan.textContent = rq;
+
+      left.appendChild(badge);
+      left.appendChild(qSpan);
+      itemEl.appendChild(left);
+
+      itemEl.addEventListener('click', function() {
+        const input = document.getElementById('cmd-palette-input');
+        if (input) {
+          input.value = rq;
+          performSearch(rq);
+        }
+      });
+      resultsContainer.appendChild(itemEl);
+      currentSearchItems.push({ id: itemEl.id, el: itemEl, recentQuery: rq });
+    });
+  }
+
+  // 2. Navigation Actions
+  const actTitle = document.createElement('div');
+  actTitle.className = 'search-group-title';
+  actTitle.textContent = 'Actions';
+  resultsContainer.appendChild(actTitle);
+
+  PALETTE_ACTIONS.forEach(function(act, idx) {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'search-item';
+    itemEl.id = 'palette-opt-act-' + idx;
+    itemEl.setAttribute('role', 'option');
+    itemEl.setAttribute('aria-selected', 'false');
+
+    const left = document.createElement('div');
+    left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.textContent = 'ACTION';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.style.fontWeight = '500';
+    titleSpan.textContent = act.title;
+
+    left.appendChild(badge);
+    left.appendChild(titleSpan);
+    itemEl.appendChild(left);
+
+    itemEl.addEventListener('click', function() {
+      executePaletteAction(act);
+    });
+    resultsContainer.appendChild(itemEl);
+    currentSearchItems.push({ id: itemEl.id, el: itemEl, action: act });
+  });
+
+  if (currentSearchItems.length > 0) {
+    activeSearchIndex = 0;
+    updateSearchHighlight();
   }
 }
 
@@ -288,26 +658,33 @@ function performSearch(query) {
   if (!resultsContainer) return;
 
   if (!query) {
-    resultsContainer.textContent = '';
-    currentSearchItems = [];
-    activeSearchIndex = -1;
-    if (countBadge) countBadge.style.display = 'none';
+    renderPaletteDefault();
     return;
   }
 
   fetch('/api/v1/search?q=' + encodeURIComponent(query))
-    .then(function(res) { return res.json(); })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Search failed with status ' + res.status);
+      return res.json();
+    })
     .then(function(data) {
       resultsContainer.textContent = '';
       currentSearchItems = [];
       activeSearchIndex = -1;
 
+      // Filter local actions matching query
+      const qLower = query.toLowerCase();
+      const matchedActions = PALETTE_ACTIONS.filter(function(a) {
+        return a.title.toLowerCase().indexOf(qLower) !== -1 || a.keywords.indexOf(qLower) !== -1;
+      });
+
+      const grandTotal = (data.total || 0) + matchedActions.length;
       if (countBadge) {
         countBadge.style.display = 'inline-block';
-        countBadge.textContent = data.total + (data.total === 1 ? ' result' : ' results');
+        countBadge.textContent = grandTotal + (grandTotal === 1 ? ' result' : ' results');
       }
 
-      if (!data.total || data.total === 0) {
+      if (grandTotal === 0) {
         const emptyDiv = document.createElement('div');
         emptyDiv.style.cssText = 'padding: 24px 12px; text-align: center; color: var(--text-faint); font-size: 12px;';
         emptyDiv.textContent = 'No results found for "' + query + '"';
@@ -325,17 +702,43 @@ function performSearch(query) {
         items.forEach(function(item) {
           const itemEl = document.createElement('div');
           itemEl.className = 'search-item';
+          const optId = 'palette-opt-' + currentSearchItems.length;
+          itemEl.id = optId;
+          itemEl.setAttribute('role', 'option');
+          itemEl.setAttribute('aria-selected', 'false');
+
           renderFn(item, itemEl);
 
           itemEl.addEventListener('click', function() {
-            if (item.url) window.location.href = item.url;
+            saveRecentSearch(query);
+            if (item.action) {
+              executePaletteAction(item.action);
+            } else if (item.url) {
+              window.location.href = item.url;
+            }
           });
           resultsContainer.appendChild(itemEl);
-          currentSearchItems.push({ el: itemEl, url: item.url });
+          currentSearchItems.push({ id: optId, el: itemEl, url: item.url, action: item.action });
         });
       }
 
-      // 1. Alerts
+      // Group 1: Actions
+      if (matchedActions.length > 0) {
+        addGroup('Actions', matchedActions.map(function(act) { return { title: act.title, action: act, url: act.url }; }), function(item, el) {
+          const left = document.createElement('div');
+          left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+          const badge = document.createElement('span');
+          badge.className = 'badge';
+          badge.textContent = 'ACTION';
+          const span = document.createElement('span');
+          span.textContent = item.title;
+          left.appendChild(badge);
+          left.appendChild(span);
+          el.appendChild(left);
+        });
+      }
+
+      // Group 2: Alerts
       addGroup('Alerts', data.alerts, function(alert, el) {
         const left = document.createElement('div');
         left.style.cssText = 'display: flex; align-items: center; gap: 8px; overflow: hidden;';
@@ -361,7 +764,7 @@ function performSearch(query) {
         el.appendChild(right);
       });
 
-      // 2. Hosts
+      // Group 3: Hosts
       addGroup('Hosts', data.hosts, function(host, el) {
         const left = document.createElement('div');
         left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
@@ -384,7 +787,7 @@ function performSearch(query) {
         el.appendChild(right);
       });
 
-      // 3. Monitored Paths
+      // Group 4: Monitored Paths
       addGroup('Monitored Paths', data.paths, function(pathItem, el) {
         const left = document.createElement('div');
         left.style.cssText = 'display: flex; align-items: center; gap: 8px; overflow: hidden;';
@@ -413,7 +816,8 @@ function performSearch(query) {
       }
     })
     .catch(function(err) {
-      console.error('Search request failed', err);
+      showToast('danger', 'Search error: unable to load results', 3000);
+      console.error(err);
     });
 }
 
@@ -432,6 +836,17 @@ function applyAlertsTableFilter(query) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  const dialog = document.getElementById('cmd-palette-dialog');
+  if (dialog) {
+    dialog.addEventListener('click', function(e) {
+      if (e.target === dialog) closeCmdPalette();
+    });
+    dialog.addEventListener('cancel', function(e) {
+      e.preventDefault();
+      closeCmdPalette();
+    });
+  }
+
   const input = document.getElementById('cmd-palette-input');
   if (input) {
     input.addEventListener('input', function(e) {
@@ -459,11 +874,18 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         if (activeSearchIndex >= 0 && activeSearchIndex < currentSearchItems.length) {
           const target = currentSearchItems[activeSearchIndex];
-          if (target && target.url) {
+          if (target.recentQuery) {
+            input.value = target.recentQuery;
+            performSearch(target.recentQuery);
+          } else if (target.action) {
+            executePaletteAction(target.action);
+          } else if (target.url) {
+            saveRecentSearch(input.value.trim());
             window.location.href = target.url;
           }
         } else {
           // On Alerts page, Enter with no highlighted result applies the text as a table filter
+          saveRecentSearch(input.value.trim());
           applyAlertsTableFilter(input.value.trim());
           closeCmdPalette();
         }
@@ -489,17 +911,6 @@ document.addEventListener('keydown', function(e) {
     closeCmdPalette();
   }
 });
-
-function copyPath(el, text) {
-  if (!text) return;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(function() {
-      if (typeof showToast === 'function') {
-        showToast('info', 'Copied: ' + text, 2000);
-      }
-    }).catch(function() {});
-  }
-}
 </script>
 
 {% block scripts %}{% endblock %}

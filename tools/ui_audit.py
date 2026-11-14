@@ -453,6 +453,32 @@ def run_static_checks():
     return errors
 
 
+def run_check_9_dialog_and_popover():
+    """Verify <dialog> and popover attributes exist in templates for U2."""
+    errors = []
+    templates_dir = os.path.join(REPO_ROOT, "sentinel", "server", "templates")
+    has_dialog = False
+    has_popover = False
+
+    for root, _, files in os.walk(templates_dir):
+        for fname in files:
+            if fname.endswith((".html", ".j2")):
+                tpath = os.path.join(root, fname)
+                with open(tpath, "r", encoding="utf-8") as tf:
+                    tcontent = tf.read()
+                if "<dialog" in tcontent:
+                    has_dialog = True
+                if "popover=" in tcontent or "popovertarget=" in tcontent:
+                    has_popover = True
+
+    if not has_dialog:
+        errors.append("No native <dialog> element found in templates.")
+    if not has_popover:
+        errors.append("No native popover / popovertarget attributes found in templates.")
+
+    return errors
+
+
 def main():
     print("=== Sentinel Phase A & U1-FIX-2 UI Audit ===")
     all_errors = []
@@ -527,6 +553,13 @@ def main():
             all_errors.extend(c8_errs)
         else:
             print("[PASS] Check 8: Static checks (a)-(e) passed with zero violations.")
+
+        # Check 9: Dialog & Popover attributes exist (U2)
+        c9_errs = run_check_9_dialog_and_popover()
+        if c9_errs:
+            all_errors.extend(c9_errs)
+        else:
+            print("[PASS] Check 9: Native <dialog> and popover attributes verified in templates.")
 
     finally:
         if os.path.exists(temp_db.name):

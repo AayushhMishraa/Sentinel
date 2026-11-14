@@ -63,7 +63,7 @@
 
 <section id="alerts-feed-section" class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
       <h2>Live Threat &amp; Integrity Alerts</h2>
       <details class="help-popover" style="position: relative; display: inline-block;">
         <summary style="cursor: pointer; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border-subtle); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--text-muted); list-style: none;" title="Behavioral Signal Definitions">?</summary>
@@ -75,6 +75,34 @@
           <div><b>SLOW:</b> Evasion pattern</div>
         </div>
       </details>
+
+      <!-- Table Filter Popovers (Severity, Status) -->
+      <div style="display: inline-flex; align-items: center; gap: 8px;">
+        <button type="button" class="btn-filter" popovertarget="filter-sev-popover" aria-haspopup="listbox" id="filter-sev-btn" title="Filter by severity">
+          <span>Severity: <b id="filter-sev-label">All</b></span>
+          <svg class="icon-sm"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-chevron-down"></use></svg>
+        </button>
+        <div popover="auto" id="filter-sev-popover" class="sentinel-popover-menu" role="listbox" aria-label="Filter Severity">
+          <button type="button" class="sentinel-menu-item active" role="option" aria-selected="true" onclick="setSeverityFilter('all', 'All')">All Severities</button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" onclick="setSeverityFilter('critical', 'Critical')"><span class="badge critical">CRITICAL</span></button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" onclick="setSeverityFilter('high', 'High')"><span class="badge high">HIGH</span></button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" onclick="setSeverityFilter('medium', 'Medium')"><span class="badge medium">MEDIUM</span></button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" onclick="setSeverityFilter('low', 'Low')"><span class="badge low">LOW</span></button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" onclick="setSeverityFilter('info', 'Info')"><span class="badge info">INFO</span></button>
+        </div>
+
+        <button type="button" class="btn-filter" popovertarget="filter-status-popover" aria-haspopup="listbox" id="filter-status-btn" title="Filter by status">
+          <span>Status: <b id="filter-status-label">All</b></span>
+          <svg class="icon-sm"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-chevron-down"></use></svg>
+        </button>
+        <div popover="auto" id="filter-status-popover" class="sentinel-popover-menu" role="listbox" aria-label="Filter Status">
+          <button type="button" class="sentinel-menu-item active" role="option" aria-selected="true" onclick="setStatusFilter('all', 'All')">All Statuses</button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" onclick="setStatusFilter('open', 'Open')"><span class="badge status-open">OPEN</span></button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" onclick="setStatusFilter('approved', 'Approved')"><span class="badge status-approved">APPROVED</span></button>
+          <button type="button" class="sentinel-menu-item" role="option" aria-selected="false" onclick="setStatusFilter('rejected', 'Rejected')"><span class="badge status-rejected">REJECTED</span></button>
+        </div>
+      </div>
+
       <form action="{{ url_for('bulk_acknowledge_route') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Acknowledge and mark all {{ stats.total_open }} open alert(s) as resolved?');">
         <input type="hidden" name="actor" value="dashboard-admin">
         <input type="hidden" name="note" value="Bulk acknowledged">
@@ -106,7 +134,7 @@
         </thead>
         <tbody>
           {% for a in alerts %}
-          <tr class="sev-rail-{{ a.severity }}">
+          <tr class="sev-rail-{{ a.severity }}" data-sev="{{ a.severity }}" data-status="{{ a.status }}" data-host="{{ a.host_id }}">
             <td style="color: var(--text-faint); font-family: var(--font-mono); font-size: 11px;">#{{ a.id }}</td>
             <td>
               <span class="badge {{ a.severity }}">
@@ -133,10 +161,34 @@
               {% endif %}
             </td>
             <td><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
-            <td class="action-col" style="text-align: right;">
-              <a href="{{ url_for('alert_detail', alert_id=a.id) }}" class="btn-inspect">
-                Inspect &rarr;
-              </a>
+            <td class="action-col" style="text-align: right; white-space: nowrap;">
+              <div style="display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end;">
+                <a href="{{ url_for('alert_detail', alert_id=a.id) }}" class="btn-inspect">
+                  Inspect &rarr;
+                </a>
+                <button type="button" class="row-more-btn" popovertarget="row-menu-{{ a.id }}" aria-label="More actions for alert #{{ a.id }}" aria-haspopup="menu" title="More actions">···</button>
+                <div popover="auto" id="row-menu-{{ a.id }}" class="sentinel-popover-menu" role="menu" aria-label="Alert actions">
+                  <button type="button" class="sentinel-menu-item" role="menuitem" onclick="copyPath(this, '{{ a.path }}')">
+                    <svg class="icon-sm"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-file"></use></svg>
+                    <span>Copy Path</span>
+                  </button>
+                  <a href="{{ url_for('alert_detail', alert_id=a.id) }}" class="sentinel-menu-item" role="menuitem" style="text-decoration: none;">
+                    <svg class="icon-sm"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-search"></use></svg>
+                    <span>Open Detail</span>
+                  </a>
+                  {% if a.status == 'open' %}
+                  <div class="sentinel-menu-divider"></div>
+                  <form action="{{ url_for('resolve_alert_route', alert_id=a.id, action='approve') }}" method="POST" style="margin: 0;" onsubmit="if(typeof showToast==='function')showToast('info', 'Alert #{{ a.id }} acknowledged', 3000)">
+                    <input type="hidden" name="actor" value="dashboard-admin">
+                    <input type="hidden" name="note" value="Acknowledged via row menu">
+                    <button type="submit" class="sentinel-menu-item" role="menuitem" style="color: var(--ok);">
+                      <svg class="icon-sm"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-check"></use></svg>
+                      <span>Acknowledge</span>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -151,6 +203,45 @@
 <script>
 // Global variable tracking previous open alerts count for reliable bounce animation
 let previousOpenCount = parseInt('{{ stats.total_open }}', 10) || 0;
+
+let currentSevFilter = 'all';
+let currentStatusFilter = 'all';
+window.currentHostFilter = 'all';
+
+function setSeverityFilter(sev, label) {
+  currentSevFilter = sev;
+  const labelEl = document.getElementById('filter-sev-label');
+  if (labelEl) labelEl.textContent = label;
+  const popover = document.getElementById('filter-sev-popover');
+  if (popover && typeof popover.hidePopover === 'function') popover.hidePopover();
+  applyAlertsFilters();
+}
+
+function setStatusFilter(status, label) {
+  currentStatusFilter = status;
+  const labelEl = document.getElementById('filter-status-label');
+  if (labelEl) labelEl.textContent = label;
+  const popover = document.getElementById('filter-status-popover');
+  if (popover && typeof popover.hidePopover === 'function') popover.hidePopover();
+  applyAlertsFilters();
+}
+
+function applyAlertsFilters() {
+  const rows = document.querySelectorAll('#alerts-feed-section table tbody tr');
+  if (!rows) return;
+  rows.forEach(function(row) {
+    const rowSev = row.getAttribute('data-sev') || '';
+    const rowStatus = row.getAttribute('data-status') || '';
+    const rowHost = row.getAttribute('data-host') || '';
+
+    let match = true;
+    if (currentSevFilter !== 'all' && rowSev !== currentSevFilter) match = false;
+    if (currentStatusFilter !== 'all' && rowStatus !== currentStatusFilter) match = false;
+    if (window.currentHostFilter && window.currentHostFilter !== 'all' && rowHost !== window.currentHostFilter) match = false;
+
+    row.style.display = match ? '' : 'none';
+  });
+}
 
 function showToast(severity, message, duration) {
   const container = document.getElementById('toast-container');
