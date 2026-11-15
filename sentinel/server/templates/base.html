@@ -220,46 +220,65 @@
 
 <script>
 function toggleSidebarRail() {
-  const sb = document.getElementById('app-sidebar');
-  if (sb) {
-    sb.classList.toggle('collapsed');
-    const isCollapsed = sb.classList.contains('collapsed');
-    try {
-      localStorage.setItem('sentinel_sidebar_collapsed', isCollapsed ? '1' : '0');
-    } catch(e) {}
+  try {
+    const sb = document.getElementById('app-sidebar');
+    if (sb) {
+      sb.classList.toggle('collapsed');
+      const isCollapsed = sb.classList.contains('collapsed');
+      try {
+        localStorage.setItem('sentinel_sidebar_collapsed', isCollapsed ? '1' : '0');
+      } catch(e) {}
+    }
+  } catch (err) {
+    console.error('[Sentinel: Sidebar Toggle]', err);
   }
 }
 
 // Restore sidebar state
-(function() {
-  try {
+try {
+  (function() {
     if (localStorage.getItem('sentinel_sidebar_collapsed') === '1') {
       const sb = document.getElementById('app-sidebar');
       if (sb) sb.classList.add('collapsed');
     }
-  } catch(e) {}
-})();
+  })();
+} catch (err) {
+  console.error('[Sentinel Init: Sidebar]', err);
+}
 
 function setSentinelTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  document.documentElement.className = theme;
   try {
-    localStorage.setItem('sentinel_theme', theme);
-  } catch(e) {}
-  updateThemeSwitcherUI();
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.className = theme;
+    try {
+      localStorage.setItem('sentinel_theme', theme);
+    } catch(e) {}
+    updateThemeSwitcherUI();
+  } catch (err) {
+    console.error('[Sentinel: Theme Set]', err);
+  }
 }
 
 function updateThemeSwitcherUI() {
-  var current = document.documentElement.getAttribute('data-theme') || 'dark';
-  ['dark', 'light', 'contrast'].forEach(function(t) {
-    var btn = document.getElementById('theme-btn-' + t);
-    if (btn) {
-      if (t === current) btn.classList.add('active');
-      else btn.classList.remove('active');
-    }
-  });
+  try {
+    var current = document.documentElement.getAttribute('data-theme') || 'dark';
+    ['dark', 'light', 'contrast'].forEach(function(t) {
+      var btn = document.getElementById('theme-btn-' + t);
+      if (btn) {
+        if (t === current) btn.classList.add('active');
+        else btn.classList.remove('active');
+      }
+    });
+  } catch (err) {
+    console.error('[Sentinel: Theme Switcher UI]', err);
+  }
 }
-document.addEventListener('DOMContentLoaded', updateThemeSwitcherUI);
+
+try {
+  document.addEventListener('DOMContentLoaded', updateThemeSwitcherUI);
+} catch (err) {
+  console.error('[Sentinel Init: Theme]', err);
+}
 
 // ==========================================================================
 // Popover Menu Primitive (Top-layer native popover with trigger positioning & flip)
@@ -267,161 +286,204 @@ document.addEventListener('DOMContentLoaded', updateThemeSwitcherUI);
 let activePopoverTrigger = null;
 let activeOpenPopover = null;
 
-document.addEventListener('pointerdown', function(e) {
-  const trigger = e.target.closest('[popovertarget]');
-  if (trigger) activePopoverTrigger = trigger;
-}, true);
+try {
+  document.addEventListener('pointerdown', function(e) {
+    try {
+      const trigger = e.target.closest('[popovertarget]');
+      if (trigger) activePopoverTrigger = trigger;
+    } catch (err) {
+      console.error('[Sentinel: Popover pointerdown]', err);
+    }
+  }, true);
 
-document.addEventListener('click', function(e) {
-  const trigger = e.target.closest('[popovertarget]');
-  if (trigger) activePopoverTrigger = trigger;
-}, true);
+  document.addEventListener('click', function(e) {
+    try {
+      const trigger = e.target.closest('[popovertarget]');
+      if (trigger) activePopoverTrigger = trigger;
+    } catch (err) {
+      console.error('[Sentinel: Popover click]', err);
+    }
+  }, true);
+} catch (err) {
+  console.error('[Sentinel Init: Popover pointer/click listeners]', err);
+}
 
 function getTriggerForPopover(popover) {
-  if (activePopoverTrigger && activePopoverTrigger.getAttribute('popovertarget') === popover.id) {
-    return activePopoverTrigger;
+  try {
+    if (activePopoverTrigger && activePopoverTrigger.getAttribute('popovertarget') === popover.id) {
+      return activePopoverTrigger;
+    }
+    return document.querySelector('[popovertarget="' + popover.id + '"]') || document.activeElement;
+  } catch (err) {
+    console.error('[Sentinel: Popover getTrigger]', err);
+    return null;
   }
-  return document.querySelector('[popovertarget="' + popover.id + '"]') || document.activeElement;
 }
 
 function positionPopover(trigger, popover) {
-  if (!trigger || !popover) return;
-  const tRect = trigger.getBoundingClientRect();
-  const pRect = popover.getBoundingClientRect();
-  const pWidth = pRect.width > 0 ? pRect.width : (popover.offsetWidth || 190);
-  const pHeight = pRect.height > 0 ? pRect.height : (popover.offsetHeight || 120);
+  try {
+    if (!trigger || !popover) return;
+    const tRect = trigger.getBoundingClientRect();
+    const pRect = popover.getBoundingClientRect();
+    const pWidth = pRect.width > 0 ? pRect.width : (popover.offsetWidth || 190);
+    const pHeight = pRect.height > 0 ? pRect.height : (popover.offsetHeight || 120);
 
-  // Normal: align to trigger's left edge, directly under trigger
-  let top = tRect.bottom + 4;
-  let left = tRect.left;
+    // Normal: align to trigger's left edge, directly under trigger
+    let top = tRect.bottom + 4;
+    let left = tRect.left;
 
-  // Flip above if no room below
-  if (top + pHeight > window.innerHeight - 8) {
-    if (tRect.top - pHeight - 4 >= 8) {
-      top = tRect.top - pHeight - 4;
+    // Flip above if no room below
+    if (top + pHeight > window.innerHeight - 8) {
+      if (tRect.top - pHeight - 4 >= 8) {
+        top = tRect.top - pHeight - 4;
+      }
     }
+
+    // Align to trigger's right edge if left-aligned would overflow right
+    if (left + pWidth > window.innerWidth - 8) {
+      left = tRect.right - pWidth;
+    }
+
+    // Clamp to viewport by 8px
+    left = Math.max(8, Math.min(left, window.innerWidth - pWidth - 8));
+    top = Math.max(8, Math.min(top, window.innerHeight - pHeight - 8));
+
+    popover.style.top = top + 'px';
+    popover.style.left = left + 'px';
+    popover.style.margin = '0';
+  } catch (err) {
+    console.error('[Sentinel: Popover position]', err);
   }
-
-  // Align to trigger's right edge if left-aligned would overflow right
-  if (left + pWidth > window.innerWidth - 8) {
-    left = tRect.right - pWidth;
-  }
-
-  // Clamp to viewport by 8px
-  left = Math.max(8, Math.min(left, window.innerWidth - pWidth - 8));
-  top = Math.max(8, Math.min(top, window.innerHeight - pHeight - 8));
-
-  popover.style.top = top + 'px';
-  popover.style.left = left + 'px';
-  popover.style.margin = '0';
 }
 
 function onPopoverReposition() {
-  if (!activeOpenPopover) {
-    try {
-      const pop = document.querySelector('.sentinel-popover-menu:popover-open');
-      if (pop) activeOpenPopover = pop;
-    } catch(err) {}
-  }
-  if (activeOpenPopover) {
-    const trigger = getTriggerForPopover(activeOpenPopover);
-    if (trigger) positionPopover(trigger, activeOpenPopover);
+  try {
+    if (!activeOpenPopover) {
+      try {
+        const pop = document.querySelector('.sentinel-popover-menu:popover-open');
+        if (pop) activeOpenPopover = pop;
+      } catch(err) {}
+    }
+    if (activeOpenPopover) {
+      const trigger = getTriggerForPopover(activeOpenPopover);
+      if (trigger) positionPopover(trigger, activeOpenPopover);
+    }
+  } catch (err) {
+    console.error('[Sentinel: Popover reposition]', err);
   }
 }
 
 function onPopoverToggle(e) {
-  const popover = e.target;
-  if (!popover || !popover.classList || !popover.classList.contains('sentinel-popover-menu')) return;
+  try {
+    const popover = e.target;
+    if (!popover || !popover.classList || !popover.classList.contains('sentinel-popover-menu')) return;
 
-  const isOpen = (e.newState === 'open') || (popover.matches && popover.matches(':popover-open'));
-  if (isOpen) {
-    activeOpenPopover = popover;
-    const trigger = getTriggerForPopover(popover);
-    if (trigger) {
-      trigger.setAttribute('aria-expanded', 'true');
-      positionPopover(trigger, popover);
-      requestAnimationFrame(function() {
+    const isOpen = (e.newState === 'open') || (popover.matches && popover.matches(':popover-open'));
+    if (isOpen) {
+      activeOpenPopover = popover;
+      const trigger = getTriggerForPopover(popover);
+      if (trigger) {
+        trigger.setAttribute('aria-expanded', 'true');
         positionPopover(trigger, popover);
-      });
-    }
-    window.addEventListener('scroll', onPopoverReposition, { passive: true, capture: true });
-    window.addEventListener('resize', onPopoverReposition, { passive: true });
+        requestAnimationFrame(function() {
+          positionPopover(trigger, popover);
+        });
+      }
+      window.addEventListener('scroll', onPopoverReposition, { passive: true, capture: true });
+      window.addEventListener('resize', onPopoverReposition, { passive: true });
 
-    setTimeout(function() {
-      const items = popover.querySelectorAll('[role="menuitem"], [role="option"]:not([disabled])');
-      const active = popover.querySelector('.active') || items[0];
-      if (active) active.focus();
-    }, 50);
-  } else {
-    if (activeOpenPopover === popover) activeOpenPopover = null;
-    const trigger = getTriggerForPopover(popover);
-    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+      setTimeout(function() {
+        try {
+          const items = popover.querySelectorAll('[role="menuitem"], [role="option"]:not([disabled])');
+          const active = popover.querySelector('.active') || items[0];
+          if (active) active.focus();
+        } catch (err) {}
+      }, 50);
+    } else {
+      if (activeOpenPopover === popover) activeOpenPopover = null;
+      const trigger = getTriggerForPopover(popover);
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
 
-    let anyOpen = false;
-    try {
-      anyOpen = Boolean(document.querySelector('.sentinel-popover-menu:popover-open'));
-    } catch(err) {}
-    if (!anyOpen) {
-      window.removeEventListener('scroll', onPopoverReposition, { capture: true });
-      window.removeEventListener('resize', onPopoverReposition);
+      let anyOpen = false;
+      try {
+        anyOpen = Boolean(document.querySelector('.sentinel-popover-menu:popover-open'));
+      } catch(err) {}
+      if (!anyOpen) {
+        window.removeEventListener('scroll', onPopoverReposition, { capture: true });
+        window.removeEventListener('resize', onPopoverReposition);
+      }
     }
+  } catch (err) {
+    console.error('[Sentinel: Popover toggle]', err);
   }
 }
 
-document.addEventListener('beforetoggle', onPopoverToggle, true);
-document.addEventListener('toggle', onPopoverToggle, true);
+try {
+  document.addEventListener('beforetoggle', onPopoverToggle, true);
+  document.addEventListener('toggle', onPopoverToggle, true);
+} catch (err) {
+  console.error('[Sentinel Init: Popover Toggle Listeners]', err);
+}
 
 // Popover Keyboard Navigation (Roving Focus, Home/End, Typeahead)
 let popoverTypeaheadBuffer = '';
 let popoverTypeaheadTimer = null;
 
-document.addEventListener('keydown', function(e) {
-  const openPopovers = document.querySelectorAll('.sentinel-popover-menu');
-  let openPopover = null;
-  openPopovers.forEach(function(p) {
+try {
+  document.addEventListener('keydown', function(e) {
     try {
-      if (p.matches(':popover-open')) openPopover = p;
-    } catch(err) {
-      if (p.style.display !== 'none' && p.hasAttribute('popover')) openPopover = p;
+      const openPopovers = document.querySelectorAll('.sentinel-popover-menu');
+      let openPopover = null;
+      openPopovers.forEach(function(p) {
+        try {
+          if (p.matches(':popover-open')) openPopover = p;
+        } catch(err) {
+          if (p.style.display !== 'none' && p.hasAttribute('popover')) openPopover = p;
+        }
+      });
+
+      if (!openPopover || !openPopover.contains(document.activeElement)) return;
+
+      const items = Array.from(openPopover.querySelectorAll('[role="menuitem"], [role="option"]:not([disabled])'));
+      if (items.length === 0) return;
+      const currentIndex = items.indexOf(document.activeElement);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = (currentIndex + 1) % items.length;
+        items[next].focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = (currentIndex - 1 + items.length) % items.length;
+        items[prev].focus();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        items[0].focus();
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        items[items.length - 1].focus();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        if (typeof openPopover.hidePopover === 'function') openPopover.hidePopover();
+        const trigger = getTriggerForPopover(openPopover);
+        if (trigger) trigger.focus();
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        popoverTypeaheadBuffer += e.key.toLowerCase();
+        clearTimeout(popoverTypeaheadTimer);
+        popoverTypeaheadTimer = setTimeout(function() { popoverTypeaheadBuffer = ''; }, 500);
+
+        const match = items.find(function(item) {
+          return item.textContent.trim().toLowerCase().startsWith(popoverTypeaheadBuffer);
+        });
+        if (match) match.focus();
+      }
+    } catch (err) {
+      console.error('[Sentinel: Popover keydown]', err);
     }
   });
-
-  if (!openPopover || !openPopover.contains(document.activeElement)) return;
-
-  const items = Array.from(openPopover.querySelectorAll('[role="menuitem"], [role="option"]:not([disabled])'));
-  if (items.length === 0) return;
-  const currentIndex = items.indexOf(document.activeElement);
-
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    const next = (currentIndex + 1) % items.length;
-    items[next].focus();
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    const prev = (currentIndex - 1 + items.length) % items.length;
-    items[prev].focus();
-  } else if (e.key === 'Home') {
-    e.preventDefault();
-    items[0].focus();
-  } else if (e.key === 'End') {
-    e.preventDefault();
-    items[items.length - 1].focus();
-  } else if (e.key === 'Escape') {
-    e.preventDefault();
-    if (typeof openPopover.hidePopover === 'function') openPopover.hidePopover();
-    const trigger = getTriggerForPopover(openPopover);
-    if (trigger) trigger.focus();
-  } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-    popoverTypeaheadBuffer += e.key.toLowerCase();
-    clearTimeout(popoverTypeaheadTimer);
-    popoverTypeaheadTimer = setTimeout(function() { popoverTypeaheadBuffer = ''; }, 500);
-
-    const match = items.find(function(item) {
-      return item.textContent.trim().toLowerCase().startsWith(popoverTypeaheadBuffer);
-    });
-    if (match) match.focus();
-  }
-});
+} catch (err) {
+  console.error('[Sentinel Init: Popover Keydown]', err);
+}
 
 function selectHostFilter(hostId, hostLabel) {
   const labelEl = document.getElementById('host-selector-label');
@@ -470,92 +532,100 @@ function createSvgIcon(iconName, extraClass) {
 }
 
 function showToast(severity, message, duration) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
+  try {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
 
-  // Max 3 stacked
-  while (container.children.length >= 3) {
-    container.firstElementChild.remove();
+    // Max 3 stacked
+    while (container.children.length >= 3) {
+      container.firstElementChild.remove();
+    }
+
+    const toast = document.createElement('div');
+    const sevLower = (severity || 'info').toLowerCase();
+    toast.className = 'toast toast-' + sevLower;
+    toast.setAttribute('role', 'status');
+
+    // Small icon instead of "INFO" pill
+    let iconName = 'icon-info';
+    let iconColor = 'var(--brand-accent)';
+    if (sevLower === 'ok' || sevLower === 'success') {
+      iconName = 'icon-check';
+      iconColor = 'var(--sev-ok, var(--color-ok))';
+    } else if (sevLower === 'danger' || sevLower === 'critical') {
+      iconName = 'icon-alert-triangle';
+      iconColor = 'var(--sev-critical, var(--color-danger))';
+    } else if (sevLower === 'high') {
+      iconName = 'icon-alert-triangle';
+      iconColor = 'var(--sev-high)';
+    } else if (sevLower === 'medium') {
+      iconName = 'icon-alert-circle';
+      iconColor = 'var(--sev-medium)';
+    }
+
+    const iconSvg = createSvgIcon(iconName, 'icon-sm');
+    iconSvg.style.color = iconColor;
+
+    const msgSpan = document.createElement('span');
+    msgSpan.style.cssText = 'flex: 1; font-weight: 500; font-size: 12px; line-height: 1.4;';
+    msgSpan.textContent = message;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'toast-close-btn';
+    closeBtn.setAttribute('aria-label', 'Dismiss toast');
+    closeBtn.textContent = '×';
+    closeBtn.onclick = function() { toast.remove(); };
+
+    toast.appendChild(iconSvg);
+    toast.appendChild(msgSpan);
+    toast.appendChild(closeBtn);
+    container.appendChild(toast);
+
+    // Pause dismissal on hover (3s total timer)
+    const totalDuration = duration || 3000;
+    let remainingMs = totalDuration;
+    let dismissTimer = null;
+    let startTimestamp = Date.now();
+
+    function startDismissTimer() {
+      startTimestamp = Date.now();
+      dismissTimer = setTimeout(function() {
+        if (toast.parentElement) {
+          toast.classList.add('toast-fadeout');
+          setTimeout(function() { toast.remove(); }, 200);
+        }
+      }, remainingMs);
+    }
+
+    function pauseDismissTimer() {
+      clearTimeout(dismissTimer);
+      remainingMs -= (Date.now() - startTimestamp);
+      if (remainingMs < 400) remainingMs = 400;
+    }
+
+    toast.addEventListener('mouseenter', pauseDismissTimer);
+    toast.addEventListener('mouseleave', startDismissTimer);
+    startDismissTimer();
+  } catch (err) {
+    console.error('[Sentinel: Toast showToast]', err);
   }
-
-  const toast = document.createElement('div');
-  const sevLower = (severity || 'info').toLowerCase();
-  toast.className = 'toast toast-' + sevLower;
-  toast.setAttribute('role', 'status');
-
-  // Small icon instead of "INFO" pill
-  let iconName = 'icon-info';
-  let iconColor = 'var(--brand-accent)';
-  if (sevLower === 'ok' || sevLower === 'success') {
-    iconName = 'icon-check';
-    iconColor = 'var(--sev-ok, var(--color-ok))';
-  } else if (sevLower === 'danger' || sevLower === 'critical') {
-    iconName = 'icon-alert-triangle';
-    iconColor = 'var(--sev-critical, var(--color-danger))';
-  } else if (sevLower === 'high') {
-    iconName = 'icon-alert-triangle';
-    iconColor = 'var(--sev-high)';
-  } else if (sevLower === 'medium') {
-    iconName = 'icon-alert-circle';
-    iconColor = 'var(--sev-medium)';
-  }
-
-  const iconSvg = createSvgIcon(iconName, 'icon-sm');
-  iconSvg.style.color = iconColor;
-
-  const msgSpan = document.createElement('span');
-  msgSpan.style.cssText = 'flex: 1; font-weight: 500; font-size: 12px; line-height: 1.4;';
-  msgSpan.textContent = message;
-
-  const closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'toast-close-btn';
-  closeBtn.setAttribute('aria-label', 'Dismiss toast');
-  closeBtn.textContent = '×';
-  closeBtn.onclick = function() { toast.remove(); };
-
-  toast.appendChild(iconSvg);
-  toast.appendChild(msgSpan);
-  toast.appendChild(closeBtn);
-  container.appendChild(toast);
-
-  // Pause dismissal on hover (3s total timer)
-  const totalDuration = duration || 3000;
-  let remainingMs = totalDuration;
-  let dismissTimer = null;
-  let startTimestamp = Date.now();
-
-  function startDismissTimer() {
-    startTimestamp = Date.now();
-    dismissTimer = setTimeout(function() {
-      if (toast.parentElement) {
-        toast.classList.add('toast-fadeout');
-        setTimeout(function() { toast.remove(); }, 200);
-      }
-    }, remainingMs);
-  }
-
-  function pauseDismissTimer() {
-    clearTimeout(dismissTimer);
-    remainingMs -= (Date.now() - startTimestamp);
-    if (remainingMs < 400) remainingMs = 400;
-  }
-
-  toast.addEventListener('mouseenter', pauseDismissTimer);
-  toast.addEventListener('mouseleave', startDismissTimer);
-  startDismissTimer();
 }
 
 function copyPath(el, text) {
-  if (!text) return;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(function() {
+  try {
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('info', 'Copied: ' + text, 3000);
+      }).catch(function() {
+        showToast('danger', 'Unable to copy path to clipboard', 3000);
+      });
+    } else {
       showToast('info', 'Copied: ' + text, 3000);
-    }).catch(function() {
-      showToast('danger', 'Unable to copy path to clipboard', 3000);
-    });
-  } else {
-    showToast('info', 'Copied: ' + text, 3000);
+    }
+  } catch (err) {
+    console.error('[Sentinel: copyPath]', err);
   }
 }
 
@@ -936,18 +1006,6 @@ function performSearch(query) {
       resultsContainer.appendChild(errDiv);
     });
 }
-      });
-
-      if (currentSearchItems.length > 0) {
-        activeSearchIndex = 0;
-        updateSearchHighlight();
-      }
-    })
-    .catch(function(err) {
-      showToast('danger', 'Search error: unable to load results', 3000);
-      console.error(err);
-    });
-}
 
 function applyAlertsTableFilter(query) {
   const rows = document.querySelectorAll('#alerts-feed-section table tbody tr');
@@ -963,82 +1021,106 @@ function applyAlertsTableFilter(query) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  const dialog = document.getElementById('cmd-palette-dialog');
-  if (dialog) {
-    dialog.addEventListener('click', function(e) {
-      if (e.target === dialog) closeCmdPalette();
-    });
-    dialog.addEventListener('cancel', function(e) {
-      e.preventDefault();
-      closeCmdPalette();
-    });
-  }
-
-  const input = document.getElementById('cmd-palette-input');
-  if (input) {
-    input.addEventListener('input', function(e) {
-      const val = e.target.value.trim();
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(function() {
-        performSearch(val);
-      }, 150);
-    });
-
-    input.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (currentSearchItems.length > 0) {
-          activeSearchIndex = (activeSearchIndex + 1) % currentSearchItems.length;
-          updateSearchHighlight();
-        }
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (currentSearchItems.length > 0) {
-          activeSearchIndex = (activeSearchIndex - 1 + currentSearchItems.length) % currentSearchItems.length;
-          updateSearchHighlight();
-        }
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (activeSearchIndex >= 0 && activeSearchIndex < currentSearchItems.length) {
-          const target = currentSearchItems[activeSearchIndex];
-          if (target.recentQuery) {
-            input.value = target.recentQuery;
-            performSearch(target.recentQuery);
-          } else if (target.action) {
-            executePaletteAction(target.action);
-          } else if (target.url) {
-            saveRecentSearch(input.value.trim());
-            window.location.href = target.url;
-          }
-        } else {
-          // On Alerts page, Enter with no highlighted result applies the text as a table filter
-          saveRecentSearch(input.value.trim());
-          applyAlertsTableFilter(input.value.trim());
+try {
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      const dialog = document.getElementById('cmd-palette-dialog');
+      if (dialog) {
+        dialog.addEventListener('click', function(e) {
+          if (e.target === dialog) closeCmdPalette();
+        });
+        dialog.addEventListener('cancel', function(e) {
+          e.preventDefault();
           closeCmdPalette();
+        });
+      }
+
+      const input = document.getElementById('cmd-palette-input');
+      if (input) {
+        input.addEventListener('input', function(e) {
+          try {
+            const val = e.target.value.trim();
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+              performSearch(val);
+            }, 150);
+          } catch (err) {
+            console.error('[Sentinel: Palette input]', err);
+          }
+        });
+
+        input.addEventListener('keydown', function(e) {
+          try {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              if (currentSearchItems.length > 0) {
+                activeSearchIndex = (activeSearchIndex + 1) % currentSearchItems.length;
+                updateSearchHighlight();
+              }
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              if (currentSearchItems.length > 0) {
+                activeSearchIndex = (activeSearchIndex - 1 + currentSearchItems.length) % currentSearchItems.length;
+                updateSearchHighlight();
+              }
+            } else if (e.key === 'Enter') {
+              e.preventDefault();
+              if (activeSearchIndex >= 0 && activeSearchIndex < currentSearchItems.length) {
+                const target = currentSearchItems[activeSearchIndex];
+                if (target.recentQuery) {
+                  input.value = target.recentQuery;
+                  performSearch(target.recentQuery);
+                } else if (target.action) {
+                  executePaletteAction(target.action);
+                } else if (target.url) {
+                  saveRecentSearch(input.value.trim());
+                  window.location.href = target.url;
+                }
+              } else {
+                // On Alerts page, Enter with no highlighted result applies the text as a table filter
+                saveRecentSearch(input.value.trim());
+                applyAlertsTableFilter(input.value.trim());
+                closeCmdPalette();
+              }
+            } else if (e.key === 'Escape') {
+              closeCmdPalette();
+            }
+          } catch (err) {
+            console.error('[Sentinel: Palette keydown]', err);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('[Sentinel Init: Palette DOM]', err);
+    }
+  });
+} catch (err) {
+  console.error('[Sentinel Init: Palette Listener]', err);
+}
+
+try {
+  document.addEventListener('keydown', function(e) {
+    try {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        openCmdPalette();
+      } else if (e.key === '/') {
+        const active = document.activeElement;
+        const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+        if (!isInput) {
+          e.preventDefault();
+          openCmdPalette();
         }
       } else if (e.key === 'Escape') {
         closeCmdPalette();
       }
-    });
-  }
-});
-
-document.addEventListener('keydown', function(e) {
-  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
-    e.preventDefault();
-    openCmdPalette();
-  } else if (e.key === '/') {
-    const active = document.activeElement;
-    const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
-    if (!isInput) {
-      e.preventDefault();
-      openCmdPalette();
+    } catch (err) {
+      console.error('[Sentinel: Global Shortcuts keydown]', err);
     }
-  } else if (e.key === 'Escape') {
-    closeCmdPalette();
-  }
-});
+  });
+} catch (err) {
+  console.error('[Sentinel Init: Global Shortcuts]', err);
+}
 </script>
 
 {% block scripts %}{% endblock %}

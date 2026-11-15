@@ -27,3 +27,7 @@ web_root/
 sentinel/server/static/brand/logo-a.svg
 sentinel/server/static/brand/logo-b.svg
 sentinel/server/static/brand/logo-c.svg
+.libs/
+docs/screens/
+.vscode/
+

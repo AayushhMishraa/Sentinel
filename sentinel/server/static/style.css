@@ -859,6 +859,10 @@ h3 {
 /* --------------------------------------------------------------------------
    Command Palette Dialog (Native <dialog> with Backdrop Blur)
    -------------------------------------------------------------------------- */
+dialog:not([open]) {
+  display: none !important;
+}
+
 dialog.cmd-palette-dialog {
   border: none;
   background: transparent;
@@ -920,9 +924,8 @@ dialog.cmd-palette-dialog::backdrop {
    -------------------------------------------------------------------------- */
 .sentinel-popover-menu[popover] {
   position: fixed;
+  inset: auto;
   margin: 0;
-  top: 0;
-  left: 0;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--surface-bg);
@@ -932,7 +935,6 @@ dialog.cmd-palette-dialog::backdrop {
   z-index: 1000;
   color: var(--text-primary);
   outline: none;
-  inset: unset;
 }
 
 .sentinel-popover-menu::backdrop {
