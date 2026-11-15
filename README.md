@@ -1,5 +1,7 @@
 # Sentinel
 
+*Authored by Aayush Mishra*
+
 Sentinel is a real-time File Integrity Monitoring (FIM) and behavioral defense system for Linux environments. It monitors designated directories for unauthorized modifications, configuration tampering, and mass-encryption attacks, combining persistent cryptographic baselines with behavioral heuristics and an interactive security operations dashboard.
 
 ---
@@ -387,6 +389,12 @@ Sentinel is actively maintained as an independent open-source project. Current a
 - **eBPF-Based Telemetry**: Implementing an eBPF tracing backend alongside inotify to achieve guaranteed process attribution without polling `/proc`.
 - **Remote Cryptographic Baseline Verification**: Signing baseline hashes with asymmetric keys to detect unauthorized local baseline tampering.
 - **Multi-Agent Management**: Extending fleet management capabilities with centralized agent configuration push and health monitoring.
+
+---
+
+## Author
+
+Authored by **Aayush Mishra** ([@AayushhMishraa](https://github.com/AayushhMishraa)).
 
 ---
 
