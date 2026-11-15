@@ -199,7 +199,7 @@ Lessons that must not be repeated:
 Each item: write or extend a Playwright check for any UI change, keep Rewind at 228, keep `ui_audit` and
 `ui_browser_check` at EXIT=0, run the suites (T1/T2), commit, update this file.
 
-- [ ] **R0 Baseline.** Verify the current state before changing anything: branch `sentinel`, clean `git status`,
+- [x] **R0 Baseline.** Verify the current state before changing anything: branch `sentinel`, clean `git status`,
   Rewind 228 passed, sentinel 71 passed, audit EXIT=0, browser check EXIT=0. Print the literal lines. Check
   `git tag --list` for `rewind-v1` and create it locally on the last Rewind commit if missing (never push).
 
