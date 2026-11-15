@@ -114,10 +114,6 @@
             <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-file-text"></use></svg>
             <span class="hide-collapsed">Compliance Report</span>
           </a>
-          <a href="{{ url_for('ui_kit_view') }}" class="nav-item {% if request.endpoint == 'ui_kit_view' %}active{% endif %}" title="UI Kit">
-            <svg class="icon"><use href="{{ url_for('static', filename='icons/sprite.svg') }}#icon-shield"></use></svg>
-            <span class="hide-collapsed">UI Kit</span>
-          </a>
         </nav>
       </div>
     </div>
@@ -640,7 +636,6 @@ const PALETTE_ACTIONS = [
   { id: 'act-alerts', title: 'Go to Alerts Feed', category: 'Actions', url: '/', icon: 'icon-shield', keywords: 'alerts feed home dashboard live threats' },
   { id: 'act-assets', title: 'Go to Fleet Assets', category: 'Actions', url: '/assets', icon: 'icon-server', keywords: 'assets fleet hosts endpoints machines agents' },
   { id: 'act-report', title: 'Go to Compliance Report', category: 'Actions', url: '/report', icon: 'icon-file', keywords: 'compliance report audit export log' },
-  { id: 'act-uikit', title: 'Go to Design System (UI Kit)', category: 'Actions', url: '/ui-kit', icon: 'icon-database', keywords: 'ui kit design system components tokens spec' },
   { id: 'act-theme', title: 'Toggle Theme (Light / Dark)', category: 'Actions', action: 'toggle-theme', icon: 'icon-sun', keywords: 'theme toggle light dark mode switch' },
   { id: 'act-contrast', title: 'Switch to Demo Contrast Mode', category: 'Actions', action: 'contrast-theme', icon: 'icon-contrast', keywords: 'demo contrast projector high black mode' },
 ];

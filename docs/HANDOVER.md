@@ -151,7 +151,7 @@ UI state (Tailwind 4.3.5 vendored in `static/vendor/` with `VERSIONS.md`; tokens
   anti-flicker script in `<head>`. Inter + JetBrains Mono self-hosted. Contrast ratios computed by the audit.
 - Shell: sidebar (grouped nav, collapsible, rail mode, follows theme), top bar (breadcrumb, wide search, host selector,
   theme switch, user menu), pages: Alerts (stat tiles, 24 h change-velocity chart, alerts table with filters and row
-  menu), Assets (hosts, monitored folders), Alert detail, Compliance report, UI Kit (TO BE REMOVED, item R1).
+  menu), Assets (hosts, monitored folders), Alert detail, Compliance report.
 - Search: Ctrl/Cmd+K or `/` opens a native `<dialog>` palette backed by `GET /api/v1/search?q=` (alerts, hosts, paths),
   grouped results, arrows + Enter, recents (typed queries only), actions (go to pages, toggle theme, demo contrast).
 - Popover menus (host selector, severity/status filters, row "..." menu) on the native `popover` attribute with
@@ -171,7 +171,6 @@ Known issues to fix (see section 7):
 - "Bulk Acknowledge" currently marks alerts REJECTED (the report shows "Bulk acknowledged" with status REJECTED). The
   label and the effect disagree. Make the action honest and confirmable.
 - The Alerts chart is a simple curve; fine for now.
-- `/ui-kit` must go.
 
 ## 6. Done so far (commits on `sentinel`)
 
@@ -203,7 +202,7 @@ Each item: write or extend a Playwright check for any UI change, keep Rewind at 
   Rewind 228 passed, sentinel 71 passed, audit EXIT=0, browser check EXIT=0. Print the literal lines. Check
   `git tag --list` for `rewind-v1` and create it locally on the last Rewind commit if missing (never push).
 
-- [ ] **R1 Remove the UI Kit (the owner does not want to show it to the examiner).** Delete the `/ui-kit` route, the
+- [x] **R1 Remove the UI Kit (the owner does not want to show it to the examiner).** Delete the `/ui-kit` route, the
   `ui_kit.html` template, its sidebar entry, its palette and search entries, breadcrumbs/links to it, its pages in
   `tools/ui_audit.py` and `tools/ui_browser_check.py`, its screenshots in `docs/screens/`, and every mention in README
   and docs. Keep tokens, brand macros and the sidebar logo. Delete only tests that exist solely to assert `/ui-kit`

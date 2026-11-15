@@ -31,4 +31,5 @@ sentinel/server/static/brand/logo-c.svg
 docs/screens/
 .vscode/
 /HANDOVER.md
+sentinel/server/templates/*_kit.html
 

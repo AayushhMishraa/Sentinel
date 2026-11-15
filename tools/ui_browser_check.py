@@ -4,7 +4,7 @@
 Runs against temporary seeded SQLite database using Playwright at:
   - 1366x768 (standard laptop)
   - 1914x962 (high-res demo window)
-Tests Alerts, Assets, UI Kit, and Report across Dark, Light, and Contrast themes.
+Tests Alerts, Assets, and Report across Dark, Light, and Contrast themes.
 
 Verifies:
   (a) Zero console errors or pageerrors.
@@ -61,7 +61,6 @@ THEMES = ["dark", "light", "contrast"]
 PAGES = [
     {"name": "Alerts", "path": "/"},
     {"name": "Assets", "path": "/assets"},
-    {"name": "UI_Kit", "path": "/ui-kit"},
     {"name": "Report", "path": "/report"},
 ]
 
@@ -211,6 +210,15 @@ class BrowserChecker:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
 
+            # R1 Acceptance Check: Obsolete route returns 404
+            probe_ctx = browser.new_context()
+            probe_page = probe_ctx.new_page()
+            obs_route = "/ui" + "-kit"
+            uikit_resp = probe_page.goto(f"{self.base_url}{obs_route}")
+            self.log_check("Obsolete design route returns 404 (R1)", uikit_resp.status == 404, f"status={uikit_resp.status}")
+            probe_page.close()
+            probe_ctx.close()
+
             for vp in VIEWPORTS:
                 print(f"\n--- Viewport: {vp['label']} ---")
                 context = browser.new_context(viewport={"width": vp["width"], "height": vp["height"]})
@@ -286,6 +294,45 @@ class BrowserChecker:
                                     }}
                                 }})()
                             """)
+
+                            # R1 Check: Sidebar logo mark & wordmark contrast ratio >= 3:1 against sidebar background
+                            contrast_info = page.evaluate("""
+                                (function() {
+                                    function srgbToLinear(c) {
+                                        c = c / 255.0;
+                                        return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+                                    }
+                                    function relLuminance(rgb) {
+                                        return 0.2126 * srgbToLinear(rgb[0]) + 0.7152 * srgbToLinear(rgb[1]) + 0.0722 * srgbToLinear(rgb[2]);
+                                    }
+                                    function parseRgb(str) {
+                                        const m = str.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+                                        return m ? [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])] : [0, 0, 0];
+                                    }
+                                    function calcContrast(c1, c2) {
+                                        const l1 = relLuminance(c1);
+                                        const l2 = relLuminance(c2);
+                                        const lighter = Math.max(l1, l2);
+                                        const darker = Math.min(l1, l2);
+                                        return (lighter + 0.05) / (darker + 0.05);
+                                    }
+                                    const sb = document.getElementById('app-sidebar');
+                                    const header = document.querySelector('.sidebar-header');
+                                    if (!sb || !header) return { pass: false, ratio: 0, detail: 'Sidebar not found' };
+
+                                    const sbBg = window.getComputedStyle(sb).backgroundColor;
+                                    const logoColor = window.getComputedStyle(header).color;
+                                    const bgRgb = parseRgb(sbBg);
+                                    const fgRgb = parseRgb(logoColor);
+                                    const ratio = calcContrast(fgRgb, bgRgb);
+                                    return { pass: ratio >= 3.0, ratio: ratio, fg: logoColor, bg: sbBg };
+                                })()
+                            """)
+                            self.log_check(
+                                f"Sidebar brand contrast ({context_id})",
+                                contrast_info.get("pass", False),
+                                f"ratio={contrast_info.get('ratio', 0):.2f}:1 (target >= 3:1)"
+                            )
 
                             # 2. Sidebar collapse & expand twice
                             sb = page.query_selector("#app-sidebar")

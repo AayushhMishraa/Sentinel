@@ -192,10 +192,6 @@ def create_sentinel_app(repo: Repository, token: Optional[str] = None, engine=No
         days = request.args.get("days", 30, type=int)
         return generate_compliance_report_html(repo, days=days)
 
-    @app.route("/ui-kit")
-    def ui_kit_view():
-        return render_template("ui_kit.html")
-
     @app.route("/api/v1/stats")
     def api_stats():
         alerts = repo.list_alerts()

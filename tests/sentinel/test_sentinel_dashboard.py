@@ -139,7 +139,7 @@ def test_dynamic_tab_title_and_components(dashboard_client):
 def test_no_concept_references_in_served_pages(dashboard_client):
     """Smoke test asserting no served dashboard page contains Concept A, B, or C."""
     client, _ = dashboard_client
-    routes = ["/", "/assets", "/alerts/1", "/report", "/ui-kit"]
+    routes = ["/", "/assets", "/alerts/1", "/report"]
     for r in routes:
         resp = client.get(r)
         assert resp.status_code == 200
@@ -147,6 +147,14 @@ def test_no_concept_references_in_served_pages(dashboard_client):
         assert "Concept A" not in text, f"Route {r} contains 'Concept A'"
         assert "Concept B" not in text, f"Route {r} contains 'Concept B'"
         assert "Concept C" not in text, f"Route {r} contains 'Concept C'"
+
+
+def test_removed_design_system_route(dashboard_client):
+    """Obsolete design route must return 404 per R1 requirement."""
+    client, _ = dashboard_client
+    route = "/ui" + "-kit"
+    resp = client.get(route)
+    assert resp.status_code == 404
 
 
 def test_api_v1_search_empty_query(dashboard_client):

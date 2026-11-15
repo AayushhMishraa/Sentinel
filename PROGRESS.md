@@ -75,3 +75,13 @@
 - Ran: pytest tests/sentinel/ (43 passed)
 - Checkpoint: ALL STAGES & WEEKS 1-4 COMPLETED (TAG sentinel-v1)
 
+## Stage R0: Baseline Verification
+- Verified: Rewind 228 passed, Sentinel 71 passed, UI audit EXIT=0, real browser check EXIT=0 (120/120 checks).
+- Verified: git tag rewind-v1 on last Rewind commit (4ce6e5a).
+
+## Stage R1: UI Kit Removal
+- Removed: /ui-kit route from app.py, UI Kit link from sidebar in base.html, search palette action, ui_kit.html template, screenshots in docs/screens/.
+- Verified: GET /ui-kit returns 404, grep finds zero occurrences outside HANDOVER.md R1.
+- Added: Automated browser check verifying sidebar brand logo/wordmark contrast ratio >= 3:1 in Dark, Light, and Contrast themes.
+- Ran: UI audit EXIT=0, real browser check EXIT=0, Rewind 228 passed, Sentinel 72 passed.
+

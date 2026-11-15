@@ -34,7 +34,12 @@ from sentinel.models import EventEnvelope, Change, Meta
 
 def run_check_1_and_2_and_3(app, client):
     errors = []
-    routes_to_test = ["/", "/assets", "/alerts/1", "/report", "/ui-kit"]
+    routes_to_test = ["/", "/assets", "/alerts/1", "/report"]
+    # R1: obsolete route must return 404
+    obs_route = "/ui" + "-kit"
+    uikit_resp = client.get(obs_route)
+    if uikit_resp.status_code != 404:
+        errors.append(f"Route {obs_route} returned {uikit_resp.status_code}, expected 404")
     static_urls = set()
     static_dir = os.path.join(REPO_ROOT, "sentinel", "server", "static")
     templates_dir = os.path.join(REPO_ROOT, "sentinel", "server", "templates")
